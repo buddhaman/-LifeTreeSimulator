@@ -12,15 +12,17 @@ function App() {
   const [hoveredNodeId, setHoveredNodeId] = useState<number | null>(null);
   const [hoveredButtonNodeId, setHoveredButtonNodeId] = useState<number | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<number | null>(null);
-  const isMouseDownRef = useRef(false);
-  const isDraggingRef = useRef(false);
+  const [draggedNodeId, setDraggedNodeId] = useState<number | null>(null);
+  const isDraggingCanvasRef = useRef(false);
+  const mouseWorldPosRef = useRef({ x: 0, y: 0 });
+  const dragOffsetRef = useRef({ x: 0, y: 0 });
   const mouseDownPosRef = useRef({ x: 0, y: 0 });
   const lastMouseRef = useRef({ x: 0, y: 0 });
   const [nodeCount, setNodeCount] = useState(0);
   const [showPhysics, setShowPhysics] = useState(false);
-  const [, forceUpdate] = useState(0); // Force re-render for sliders
-  
-  const DRAG_THRESHOLD = 5; // pixels
+  const [, forceUpdate] = useState(0);
+
+  const DRAG_THRESHOLD = 5;
 
   // Initialize graph and camera
   useEffect(() => {
@@ -70,7 +72,18 @@ function App() {
     const renderLoop = () => {
       // Update physics simulation
       updatePhysics();
-      
+
+      // Update dragged node position every frame
+      if (draggedNodeId !== null) {
+        const node = graph.nodes.find(n => n.id === draggedNodeId);
+        if (node) {
+          node.x = mouseWorldPosRef.current.x + dragOffsetRef.current.x;
+          node.y = mouseWorldPosRef.current.y + dragOffsetRef.current.y;
+          node.vx = 0;
+          node.vy = 0;
+        }
+      }
+
       // Render
       render(ctx, camera, graph, hoveredNodeId, selectedNodeId, hoveredButtonNodeId);
       animationRef.current = requestAnimationFrame(renderLoop);
@@ -83,7 +96,7 @@ function App() {
         cancelAnimationFrame(animationRef.current);
       }
     };
-  }, [hoveredNodeId, selectedNodeId, hoveredButtonNodeId]);
+  }, [hoveredNodeId, selectedNodeId, hoveredButtonNodeId, draggedNodeId]);
 
   // Hit test to find node at position
   const hitTest = (worldX: number, worldY: number): Node | null => {
@@ -127,29 +140,18 @@ function App() {
     const camera = cameraRef.current;
     if (!camera) return;
 
-    // Check if we should start dragging (threshold exceeded)
-    if (isMouseDownRef.current && !isDraggingRef.current) {
-      const dx = e.clientX - mouseDownPosRef.current.x;
-      const dy = e.clientY - mouseDownPosRef.current.y;
-      const distance = Math.sqrt(dx * dx + dy * dy);
-      
-      if (distance > DRAG_THRESHOLD) {
-        isDraggingRef.current = true;
-        if (canvasRef.current) {
-          canvasRef.current.style.cursor = 'grabbing';
-        }
-      }
-    }
+    const worldPos = camera.screenToWorld(e.clientX, e.clientY);
+    mouseWorldPosRef.current = worldPos;
 
-    if (isDraggingRef.current) {
+    // Dragging canvas
+    if (isDraggingCanvasRef.current) {
       const dx = e.clientX - lastMouseRef.current.x;
       const dy = e.clientY - lastMouseRef.current.y;
       camera.pan(-dx, -dy);
       lastMouseRef.current = { x: e.clientX, y: e.clientY };
-    } else {
-      const worldPos = camera.screenToWorld(e.clientX, e.clientY);
-
-      // Check for button hover first
+    }
+    // Not dragging - update hover
+    else if (!draggedNodeId) {
       const buttonNode = hitTestExpandButton(worldPos.x, worldPos.y);
       if (buttonNode) {
         setHoveredButtonNodeId(buttonNode.id);
@@ -164,22 +166,48 @@ function App() {
 
   // Mouse down handler
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    // Store initial position but don't start dragging yet
-    isMouseDownRef.current = true;
+    const camera = cameraRef.current;
+    if (!camera) return;
+
     mouseDownPosRef.current = { x: e.clientX, y: e.clientY };
     lastMouseRef.current = { x: e.clientX, y: e.clientY };
-    isDraggingRef.current = false;
+
+    const worldPos = camera.screenToWorld(e.clientX, e.clientY);
+    mouseWorldPosRef.current = worldPos;
+
+    // Check if clicking on a node
+    const node = hitTest(worldPos.x, worldPos.y);
+    if (node) {
+      // Start dragging node immediately
+      setDraggedNodeId(node.id);
+      dragOffsetRef.current = {
+        x: node.x - worldPos.x,
+        y: node.y - worldPos.y
+      };
+      if (canvasRef.current) {
+        canvasRef.current.style.cursor = 'grabbing';
+      }
+    } else {
+      // Start dragging canvas
+      isDraggingCanvasRef.current = true;
+      if (canvasRef.current) {
+        canvasRef.current.style.cursor = 'grabbing';
+      }
+    }
   };
 
   // Mouse up handler
   const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
-    const wasDragging = isDraggingRef.current;
-    
-    if (!wasDragging) {
-      // Click event - only if we didn't drag
-      const camera = cameraRef.current;
-      if (!camera) return;
+    const camera = cameraRef.current;
+    if (!camera) return;
 
+    const dx = e.clientX - mouseDownPosRef.current.x;
+    const dy = e.clientY - mouseDownPosRef.current.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    const wasClick = distance < DRAG_THRESHOLD;
+
+    // Handle click (not drag)
+    if (wasClick) {
       const worldPos = camera.screenToWorld(e.clientX, e.clientY);
 
       // Check for button click first
@@ -195,10 +223,10 @@ function App() {
       }
     }
 
-    // Reset all drag states
-    isMouseDownRef.current = false;
-    isDraggingRef.current = false;
-    
+    // Reset drag states
+    setDraggedNodeId(null);
+    isDraggingCanvasRef.current = false;
+
     // Update cursor based on hover
     const hasHover = hoveredNodeId !== null || hoveredButtonNodeId !== null;
     if (canvasRef.current) {
@@ -208,11 +236,11 @@ function App() {
 
   // Update cursor based on hover state
   useEffect(() => {
-    if (canvasRef.current && !isDraggingRef.current) {
+    if (canvasRef.current && !draggedNodeId && !isDraggingCanvasRef.current) {
       const hasHover = hoveredNodeId !== null || hoveredButtonNodeId !== null;
       canvasRef.current.style.cursor = hasHover ? 'pointer' : 'grab';
     }
-  }, [hoveredNodeId, hoveredButtonNodeId]);
+  }, [hoveredNodeId, hoveredButtonNodeId, draggedNodeId]);
 
   // Expand node - generate children
   const expandNode = (nodeId: number) => {
