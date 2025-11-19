@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Camera2D } from './Camera2D';
-import { graph, initializeGraph, layoutGraph, addNode, createNode, isLeafNode, Node } from './graph';
+import { graph, initializeGraph, updatePhysics, addNode, createNode, isLeafNode, Node } from './graph';
 import { render, getExpandButtonBounds } from './renderer';
 import { Scenario } from './api';
 import './App.css';
@@ -45,7 +45,7 @@ function App() {
     };
   }, []);
 
-  // Render loop
+  // Render loop with physics update
   useEffect(() => {
     const canvas = canvasRef.current;
     if (!canvas) return;
@@ -55,6 +55,10 @@ function App() {
     if (!ctx || !camera) return;
 
     const renderLoop = () => {
+      // Update physics simulation
+      updatePhysics();
+      
+      // Render
       render(ctx, camera, graph, hoveredNodeId, selectedNodeId, hoveredButtonNodeId);
       animationRef.current = requestAnimationFrame(renderLoop);
     };
@@ -230,7 +234,7 @@ function App() {
       addNode(child);
     });
 
-    layoutGraph();
+    // Physics simulation will handle layout automatically
     setNodeCount(graph.nodes.length);
   };
 

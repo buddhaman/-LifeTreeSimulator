@@ -8,6 +8,8 @@ export interface Node {
   parentId: number | null;
   x: number;
   y: number;
+  vx: number; // velocity x
+  vy: number; // velocity y
   width: number;
   height: number;
   expanded: boolean;
@@ -40,6 +42,19 @@ export function createNode(
   tags: string[] = [],
   parentId: number | null = null
 ): Node {
+  // Initialize near parent if it exists
+  let initialX = 0;
+  let initialY = 0;
+  
+  if (parentId !== null) {
+    const parent = findNode(parentId);
+    if (parent) {
+      // Start near parent with small random offset
+      initialX = parent.x + (Math.random() - 0.5) * 100;
+      initialY = parent.y - 200 + (Math.random() - 0.5) * 50;
+    }
+  }
+  
   return {
     id,
     title,
@@ -47,8 +62,10 @@ export function createNode(
     probability,
     tags,
     parentId,
-    x: 0,
-    y: 0,
+    x: initialX,
+    y: initialY,
+    vx: 0,
+    vy: 0,
     width: 250,
     height: 150,
     expanded: false,
@@ -87,85 +104,112 @@ export function isLeafNode(nodeId: number): boolean {
   return getChildren(nodeId).length === 0;
 }
 
-// Tree layout algorithm - positions children under their parents
-export function layoutGraph(): void {
+// Physics-based force simulation parameters
+const REPULSION_STRENGTH = 50000; // Repulsion force between nodes
+const SPRING_STRENGTH = 0.01; // Spring force for parent-child connections
+const SPRING_LENGTH = 200; // Desired distance between parent-child
+const FRICTION = 0.85; // Damping factor (0-1, lower = more friction)
+const GRAVITY_Y = 0.5; // Upward gravity (very low)
+const MIN_DISTANCE = 10; // Minimum distance for repulsion calculation
+const MAX_VELOCITY = 20; // Cap velocity to prevent instability
+
+// Physics simulation - update node positions based on forces
+export function updatePhysics(): void {
   if (graph.nodes.length === 0) return;
 
-  const verticalGap = 250;
-  const horizontalGap = 80;
+  const dt = 1; // timestep
 
-  // Find root nodes (no parent)
-  const roots = graph.nodes.filter(node => node.parentId === null);
+  // Calculate forces for each node
+  const forces: { x: number; y: number }[] = graph.nodes.map(() => ({ x: 0, y: 0 }));
 
-  // Calculate subtree width for each node (post-order traversal)
-  const subtreeWidths = new Map<number, number>();
+  // 1. Repulsion between all nodes (prevent overlap)
+  for (let i = 0; i < graph.nodes.length; i++) {
+    for (let j = i + 1; j < graph.nodes.length; j++) {
+      const nodeA = graph.nodes[i];
+      const nodeB = graph.nodes[j];
 
-  function calculateSubtreeWidth(nodeId: number): number {
-    if (subtreeWidths.has(nodeId)) {
-      return subtreeWidths.get(nodeId)!;
+      const dx = nodeB.x - nodeA.x;
+      const dy = nodeB.y - nodeA.y;
+      const distance = Math.sqrt(dx * dx + dy * dy);
+      
+      if (distance < MIN_DISTANCE) continue;
+
+      // Coulomb-like repulsion (inverse square)
+      const force = REPULSION_STRENGTH / (distance * distance);
+      const fx = (dx / distance) * force;
+      const fy = (dy / distance) * force;
+
+      forces[i].x -= fx;
+      forces[i].y -= fy;
+      forces[j].x += fx;
+      forces[j].y += fy;
     }
-
-    const node = findNode(nodeId);
-    if (!node) return 0;
-
-    const children = getChildren(nodeId);
-
-    if (children.length === 0) {
-      // Leaf node - width is just the node's own width
-      subtreeWidths.set(nodeId, node.width);
-      return node.width;
-    }
-
-    // Calculate total width needed for all children
-    let totalChildrenWidth = 0;
-    children.forEach(child => {
-      totalChildrenWidth += calculateSubtreeWidth(child.id);
-    });
-
-    // Add gaps between children
-    totalChildrenWidth += (children.length - 1) * horizontalGap;
-
-    // Subtree width is the max of node width or children width
-    const width = Math.max(node.width, totalChildrenWidth);
-    subtreeWidths.set(nodeId, width);
-    return width;
   }
 
-  // Position nodes recursively
-  function positionNode(nodeId: number, x: number, y: number): void {
-    const node = findNode(nodeId);
-    if (!node) return;
+  // 2. Spring force between connected nodes (parent-child)
+  graph.edges.forEach(edge => {
+    const parent = findNode(edge.fromId);
+    const child = findNode(edge.toId);
+    
+    if (!parent || !child) return;
 
-    node.x = x;
-    node.y = y;
+    const dx = child.x - parent.x;
+    const dy = child.y - parent.y;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+    
+    if (distance < MIN_DISTANCE) return;
 
-    const children = getChildren(nodeId);
-    if (children.length === 0) return;
+    // Hooke's law: F = k * (distance - restLength)
+    const force = SPRING_STRENGTH * (distance - SPRING_LENGTH);
+    const fx = (dx / distance) * force;
+    const fy = (dy / distance) * force;
 
-    // Calculate total width needed for children
-    const subtreeWidth = subtreeWidths.get(nodeId) || 0;
-    let currentX = x - subtreeWidth / 2;
+    const parentIndex = graph.nodes.findIndex(n => n.id === parent.id);
+    const childIndex = graph.nodes.findIndex(n => n.id === child.id);
 
-    children.forEach(child => {
-      const childWidth = subtreeWidths.get(child.id) || 0;
-      const childX = currentX + childWidth / 2;
-      positionNode(child.id, childX, y - verticalGap);
-      currentX += childWidth + horizontalGap;
-    });
-  }
+    if (parentIndex !== -1) {
+      forces[parentIndex].x += fx;
+      forces[parentIndex].y += fy;
+    }
+    if (childIndex !== -1) {
+      forces[childIndex].x -= fx;
+      forces[childIndex].y -= fy;
+    }
+  });
 
-  // Layout each root tree
-  let rootX = 0;
-  roots.forEach((root, i) => {
-    calculateSubtreeWidth(root.id);
-    const rootWidth = subtreeWidths.get(root.id) || 0;
+  // 3. Apply upward gravity (to orient tree upward)
+  graph.nodes.forEach((_node, i) => {
+    forces[i].y -= GRAVITY_Y; // Negative y is upward
+  });
 
-    if (i > 0) {
-      rootX += rootWidth / 2 + horizontalGap;
+  // Update velocities and positions
+  graph.nodes.forEach((node, i) => {
+    // Apply forces to velocity
+    node.vx += forces[i].x * dt;
+    node.vy += forces[i].y * dt;
+
+    // Apply friction
+    node.vx *= FRICTION;
+    node.vy *= FRICTION;
+
+    // Clamp velocity
+    const speed = Math.sqrt(node.vx * node.vx + node.vy * node.vy);
+    if (speed > MAX_VELOCITY) {
+      node.vx = (node.vx / speed) * MAX_VELOCITY;
+      node.vy = (node.vy / speed) * MAX_VELOCITY;
     }
 
-    positionNode(root.id, rootX, 0);
-    rootX += rootWidth / 2;
+    // Update position
+    node.x += node.vx * dt;
+    node.y += node.vy * dt;
+
+    // Keep root node fixed at origin
+    if (node.parentId === null) {
+      node.x = 0;
+      node.y = 0;
+      node.vx = 0;
+      node.vy = 0;
+    }
   });
 }
 
@@ -241,5 +285,5 @@ export function initializeGraph(): void {
   );
   addNode(grandchild2);
 
-  layoutGraph();
+  // Physics will handle layout dynamically
 }
