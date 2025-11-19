@@ -3,7 +3,7 @@
 
 import { Node } from './graph';
 
-const ANTHROPIC_API_KEY = 'YOUR_API_KEY_HERE';
+// const ANTHROPIC_API_KEY = 'YOUR_API_KEY_HERE';
 
 export interface Scenario {
   title: string;
@@ -12,7 +12,7 @@ export interface Scenario {
   tags: string[];
 }
 
-export async function generateScenarios(parentScenario: Node): Promise<Scenario[]> {
+export async function generateScenarios(_parentScenario: Node): Promise<Scenario[]> {
   // This is a placeholder that returns mock data
   // Replace this with actual Claude API call
 
