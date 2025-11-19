@@ -1,0 +1,169 @@
+.app {
+  width: 100vw;
+  height: 100vh;
+  position: relative;
+  overflow: hidden;
+}
+
+canvas {
+  display: block;
+  cursor: grab;
+}
+
+.sidebar {
+  position: fixed;
+  top: 0;
+  right: 0;
+  width: 300px;
+  height: 100vh;
+  background: rgba(20, 20, 40, 0.95);
+  backdrop-filter: blur(10px);
+  color: #fff;
+  padding: 24px;
+  box-shadow: -4px 0 20px rgba(0, 0, 0, 0.3);
+  overflow-y: auto;
+}
+
+.sidebar h1 {
+  font-size: 24px;
+  margin-bottom: 24px;
+  color: #a8b2ff;
+}
+
+.controls {
+  margin-bottom: 32px;
+}
+
+.controls p {
+  margin: 8px 0;
+  font-size: 14px;
+  color: rgba(255, 255, 255, 0.7);
+}
+
+.controls button {
+  margin-top: 16px;
+  padding: 10px 20px;
+  background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+  border: none;
+  border-radius: 6px;
+  color: #fff;
+  font-size: 14px;
+  font-weight: 600;
+  cursor: pointer;
+  transition: transform 0.2s, box-shadow 0.2s;
+  width: 100%;
+}
+
+.controls button:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 4px 12px rgba(102, 126, 234, 0.4);
+}
+
+.controls button:active {
+  transform: translateY(0);
+}
+
+.instructions {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+}
+
+.instructions h3 {
+  font-size: 16px;
+  margin-bottom: 12px;
+  color: #a8b2ff;
+}
+
+.instructions ul {
+  list-style: none;
+  padding: 0;
+}
+
+.instructions li {
+  margin: 8px 0;
+  font-size: 13px;
+  color: rgba(255, 255, 255, 0.7);
+  padding-left: 20px;
+  position: relative;
+}
+
+.instructions li:before {
+  content: '→';
+  position: absolute;
+  left: 0;
+  color: #667eea;
+}
+
+.selected-node {
+  margin-top: 24px;
+  padding-top: 24px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  margin-bottom: 24px;
+}
+
+.selected-node h3 {
+  font-size: 16px;
+  margin-bottom: 16px;
+  color: #a8b2ff;
+}
+
+.node-details {
+  background: rgba(255, 255, 255, 0.05);
+  border-radius: 8px;
+  padding: 16px;
+}
+
+.node-details h4 {
+  font-size: 18px;
+  margin-bottom: 12px;
+  color: #fff;
+  font-weight: 600;
+}
+
+.node-details .description {
+  font-size: 14px;
+  line-height: 1.5;
+  color: rgba(255, 255, 255, 0.8);
+  margin-bottom: 16px;
+}
+
+.node-metadata {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+}
+
+.node-metadata .probability,
+.node-metadata .tags {
+  display: flex;
+  align-items: flex-start;
+  gap: 8px;
+  font-size: 13px;
+}
+
+.node-metadata .label {
+  color: rgba(255, 255, 255, 0.6);
+  font-weight: 500;
+  min-width: 80px;
+}
+
+.node-metadata .value {
+  color: #a8b2ff;
+  font-weight: 600;
+}
+
+.tag-list {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+}
+
+.tag {
+  background: rgba(102, 126, 234, 0.3);
+  color: #a8b2ff;
+  padding: 4px 10px;
+  border-radius: 12px;
+  font-size: 11px;
+  font-weight: 500;
+}
