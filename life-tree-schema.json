@@ -1,0 +1,316 @@
+{
+  "$schema": "http://json-schema.org/draft-07/schema#",
+  "title": "Life Tree Simulation Schema",
+  "description": "Complete schema for the Life Tree simulation - a dynamic life path simulator with user input, simulation state, and a growing decision tree",
+  "type": "object",
+  "required": ["userInput", "simulationState", "lifeTree"],
+  "properties": {
+    "userInput": {
+      "type": "object",
+      "description": "Immutable user-provided data that initializes the simulation",
+      "required": ["demographics", "careerProfile", "lifeProfile", "aspirationsAndValues", "baselineFeeling"],
+      "properties": {
+        "demographics": {
+          "type": "object",
+          "required": ["age", "location", "relationshipStatus", "familySituation"],
+          "properties": {
+            "age": {
+              "type": "integer",
+              "description": "User's starting age",
+              "minimum": 18,
+              "maximum": 100
+            },
+            "location": {
+              "type": "string",
+              "description": "User's starting city and country, e.g., 'Amsterdam, Netherlands'"
+            },
+            "relationshipStatus": {
+              "type": "string",
+              "enum": ["Single", "In a Relationship", "Married", "Divorced", "Widowed"]
+            },
+            "familySituation": {
+              "type": "string",
+              "enum": ["No children", "Has children living at home", "Has grown children"]
+            }
+          }
+        },
+        "careerProfile": {
+          "type": "object",
+          "required": ["jobTitle", "industry", "educationLevel", "monthlyNetIncome"],
+          "properties": {
+            "jobTitle": {
+              "type": "string",
+              "description": "e.g., 'Software Engineer'"
+            },
+            "industry": {
+              "type": "string",
+              "description": "e.g., 'Technology'"
+            },
+            "educationLevel": {
+              "type": "string",
+              "enum": ["High School", "Bachelor's Degree", "Master's Degree", "PhD/Doctorate"]
+            },
+            "monthlyNetIncome": {
+              "type": "integer",
+              "description": "Take-home pay per month",
+              "minimum": 0
+            }
+          }
+        },
+        "lifeProfile": {
+          "type": "object",
+          "required": ["lifestyleProfile", "timeAbundance", "communityAndConnection"],
+          "properties": {
+            "lifestyleProfile": {
+              "type": "string",
+              "enum": ["Highly Active & Healthy", "Balanced", "Sedentary", "High-Stress / Demanding"]
+            },
+            "timeAbundance": {
+              "type": "string",
+              "enum": ["Scarce", "Limited", "Balanced", "Abundant"],
+              "description": "User's perception of their free time"
+            },
+            "communityAndConnection": {
+              "type": "string",
+              "enum": ["Isolated", "Grounded", "Connected", "Thriving"],
+              "description": "User's sense of social support"
+            }
+          }
+        },
+        "aspirationsAndValues": {
+          "type": "object",
+          "required": ["growthPillars", "lifePriorities", "longTermGoals"],
+          "properties": {
+            "growthPillars": {
+              "type": "array",
+              "description": "List of current key skills or life assets, e.g., ['Technical Expertise', 'Public Speaking']",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 0
+            },
+            "lifePriorities": {
+              "type": "array",
+              "description": "An ordered list of what the user values most, e.g., ['Family', 'Career', 'Health']",
+              "items": {
+                "type": "string"
+              },
+              "minItems": 1
+            },
+            "longTermGoals": {
+              "type": "string",
+              "description": "An open-text description of a major life goal"
+            }
+          }
+        },
+        "baselineFeeling": {
+          "type": "object",
+          "required": ["happinessScore"],
+          "properties": {
+            "happinessScore": {
+              "type": "number",
+              "description": "Starting happiness on a 1-10 scale, e.g., 7.5",
+              "minimum": 1,
+              "maximum": 10
+            }
+          }
+        }
+      }
+    },
+    "simulationState": {
+      "type": "object",
+      "description": "The 'Life Dashboard' - dynamic object reflecting the user's current situation, updated with every choice",
+      "required": [
+        "currentAge",
+        "currentLocation",
+        "currentRelationshipStatus",
+        "currentFamilySituation",
+        "happinessScore",
+        "healthScore",
+        "monthlyIncome",
+        "timeAbundance",
+        "communityAndConnection",
+        "growthPillars"
+      ],
+      "properties": {
+        "currentAge": {
+          "type": "number",
+          "description": "The user's current age in the simulation (can be fractional for partial years)",
+          "minimum": 18,
+          "maximum": 120
+        },
+        "currentLocation": {
+          "type": "string",
+          "description": "The user's current location in the simulation"
+        },
+        "currentRelationshipStatus": {
+          "type": "string",
+          "enum": ["Single", "In a Relationship", "Married", "Divorced", "Widowed"]
+        },
+        "currentFamilySituation": {
+          "type": "string",
+          "enum": ["No children", "Has children living at home", "Has grown children"]
+        },
+        "happinessScore": {
+          "type": "number",
+          "description": "Current happiness on a 1-10 scale",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "healthScore": {
+          "type": "number",
+          "description": "An abstracted health score on a 1-10 scale, derived from lifestyle choices",
+          "minimum": 1,
+          "maximum": 10
+        },
+        "monthlyIncome": {
+          "type": "integer",
+          "description": "Current monthly net income",
+          "minimum": 0
+        },
+        "timeAbundance": {
+          "type": "string",
+          "enum": ["Scarce", "Limited", "Balanced", "Abundant"]
+        },
+        "communityAndConnection": {
+          "type": "string",
+          "enum": ["Isolated", "Grounded", "Connected", "Thriving"]
+        },
+        "growthPillars": {
+          "type": "array",
+          "description": "The current set of acquired life assets",
+          "items": {
+            "type": "string"
+          }
+        }
+      }
+    },
+    "lifeTree": {
+      "description": "A nested tree structure of nodes representing past, present, and potential future choices. This is the root node.",
+      "$ref": "#/definitions/Node"
+    }
+  },
+  "definitions": {
+    "Node": {
+      "type": "object",
+      "description": "Recursive node object representing a choice or event in the life simulation",
+      "required": ["nodeId", "title", "description", "type", "effects", "isSelected", "children"],
+      "properties": {
+        "nodeId": {
+          "type": "string",
+          "description": "A unique identifier for the node, e.g., 'genesis-001' or 'choice-career-2024-05'"
+        },
+        "title": {
+          "type": "string",
+          "description": "The title of the choice or event, e.g., 'Genesis Node' or 'Focus on Career Growth'"
+        },
+        "description": {
+          "type": "string",
+          "description": "A brief description of the node's context and what this choice entails"
+        },
+        "type": {
+          "type": "string",
+          "enum": ["CHOICE", "EVENT"],
+          "description": "A CHOICE is user-selectable. An EVENT is a random occurrence."
+        },
+        "probability": {
+          "type": ["object", "null"],
+          "description": "Likelihood assessment for this choice's outcome. Can be null for events or certain choices.",
+          "properties": {
+            "score": {
+              "type": "number",
+              "description": "A score from 0.0 to 1.0 indicating the likelihood of a successful outcome",
+              "minimum": 0,
+              "maximum": 1
+            },
+            "reasoning": {
+              "type": "string",
+              "description": "The LLM's brief explanation for the assigned probability score"
+            }
+          },
+          "required": ["score", "reasoning"]
+        },
+        "effects": {
+          "type": "object",
+          "description": "The changes that will be applied to 'simulationState' if this node is chosen. Keys must match keys in simulationState.",
+          "properties": {
+            "currentAge": {
+              "type": "string",
+              "description": "e.g., '+1' or '+0.5' for years passed",
+              "pattern": "^[+-]?\\d+(\\.\\d+)?$"
+            },
+            "currentLocation": {
+              "type": "string",
+              "description": "New location if changed"
+            },
+            "currentRelationshipStatus": {
+              "type": "string",
+              "enum": ["Single", "In a Relationship", "Married", "Divorced", "Widowed"]
+            },
+            "currentFamilySituation": {
+              "type": "string",
+              "enum": ["No children", "Has children living at home", "Has grown children"]
+            },
+            "happinessScore": {
+              "type": "string",
+              "description": "e.g., '+1.5' or '-0.5'",
+              "pattern": "^[+-]?\\d+(\\.\\d+)?$"
+            },
+            "healthScore": {
+              "type": "string",
+              "description": "e.g., '-0.2' or '+1.0'",
+              "pattern": "^[+-]?\\d+(\\.\\d+)?$"
+            },
+            "monthlyIncome": {
+              "type": "string",
+              "description": "e.g., '+500' or '-100'",
+              "pattern": "^[+-]?\\d+$"
+            },
+            "timeAbundance": {
+              "type": "string",
+              "enum": ["Scarce", "Limited", "Balanced", "Abundant"],
+              "description": "The new state"
+            },
+            "communityAndConnection": {
+              "type": "string",
+              "enum": ["Isolated", "Grounded", "Connected", "Thriving"],
+              "description": "The new state"
+            },
+            "growthPillars": {
+              "type": "object",
+              "description": "Additions or removals to growth pillars",
+              "properties": {
+                "add": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "New skills or assets acquired"
+                },
+                "remove": {
+                  "type": "array",
+                  "items": {
+                    "type": "string"
+                  },
+                  "description": "Skills or assets lost or deprecated"
+                }
+              }
+            }
+          },
+          "additionalProperties": false
+        },
+        "isSelected": {
+          "type": "boolean",
+          "description": "True if the user has chosen this path. Only one node per 'children' array can be true."
+        },
+        "children": {
+          "type": "array",
+          "description": "An array of subsequent Node objects. This is where the LLM will add the next set of choices.",
+          "items": {
+            "$ref": "#/definitions/Node"
+          }
+        }
+      }
+    }
+  }
+}

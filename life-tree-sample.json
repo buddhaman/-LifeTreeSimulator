@@ -1,0 +1,94 @@
+{
+  "userInput": {
+    "demographics": {
+      "age": 28,
+      "location": "Berlin, Germany",
+      "relationshipStatus": "In a Relationship",
+      "familySituation": "No children"
+    },
+    "careerProfile": {
+      "jobTitle": "UI/UX Designer",
+      "industry": "Technology",
+      "educationLevel": "Bachelor's Degree",
+      "monthlyNetIncome": 3800
+    },
+    "lifeProfile": {
+      "lifestyleProfile": "Balanced",
+      "timeAbundance": "Limited",
+      "communityAndConnection": "Connected"
+    },
+    "aspirationsAndValues": {
+      "growthPillars": ["Creative Design", "User Research"],
+      "lifePriorities": ["Personal Growth", "Career", "Relationships"],
+      "longTermGoals": "I want to lead a design team for a product I'm passionate about."
+    },
+    "baselineFeeling": {
+      "happinessScore": 7
+    }
+  },
+  "simulationState": {
+    "currentAge": 28,
+    "currentLocation": "Berlin, Germany",
+    "currentRelationshipStatus": "In a Relationship",
+    "currentFamilySituation": "No children",
+    "happinessScore": 7,
+    "healthScore": 8,
+    "monthlyIncome": 3800,
+    "timeAbundance": "Limited",
+    "communityAndConnection": "Connected",
+    "growthPillars": ["Creative Design", "User Research"]
+  },
+  "lifeTree": {
+    "nodeId": "genesis-001",
+    "title": "The Beginning",
+    "description": "This is the start of your life simulation, based on the information you provided.",
+    "type": "CHOICE",
+    "probability": {
+      "score": 1,
+      "reasoning": "This is the starting point."
+    },
+    "effects": {},
+    "isSelected": true,
+    "children": [
+      {
+        "nodeId": "choice-001",
+        "title": "Focus on Career & Professional Growth",
+        "description": "Prioritize advancing your career, learning new skills, and increasing your income.",
+        "type": "CHOICE",
+        "probability": {
+          "score": 0.8,
+          "reasoning": "Your stated goals and priorities align strongly with career development."
+        },
+        "effects": {},
+        "isSelected": false,
+        "children": []
+      },
+      {
+        "nodeId": "choice-002",
+        "title": "Focus on Relationships & Family",
+        "description": "Dedicate more time and energy to deepening your personal connections with your partner, friends, and family.",
+        "type": "CHOICE",
+        "probability": {
+          "score": 0.7,
+          "reasoning": "While not your top priority, 'Relationships' are important to you and your current status is stable."
+        },
+        "effects": {},
+        "isSelected": false,
+        "children": []
+      },
+      {
+        "nodeId": "choice-003",
+        "title": "Focus on Personal Growth & Well-being",
+        "description": "Invest in your health, hobbies, and personal passions outside of your professional life.",
+        "type": "CHOICE",
+        "probability": {
+          "score": 0.65,
+          "reasoning": "This path aligns with your 'Personal Growth' priority and 'Balanced' lifestyle."
+        },
+        "effects": {},
+        "isSelected": false,
+        "children": []
+      }
+    ]
+  }
+}
