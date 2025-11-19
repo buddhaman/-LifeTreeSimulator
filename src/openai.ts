@@ -108,7 +108,7 @@ SCENARIO VARIETY:
 
 IMPORTANT AGE RULES:
 1. Each scenario must happen AFTER the current point in time. The age must be EQUAL TO OR GREATER than the current age (${parentNode.ageYears} years ${parentNode.ageWeeks} weeks). Never go backwards in time.
-2. Advance time by approximately 1-2 years per scenario.
+2. Advance time by approximately 1-2 years per scenario. Also add some weeks to the age to make it more realistic.
 3. Keep life changes realistic for this timeframe.`;
 
   const userPrompt = `${lifeHistory}\n\nGenerate ${count} diverse future scenarios that happen 1-2 years AFTER the current point (age ${parentNode.ageYears}y ${parentNode.ageWeeks}w). Each scenario should advance time by roughly 1-2 years.`;
