@@ -152,7 +152,10 @@ IMPORTANT AGE RULES:
     });
 
     if (!response.ok) {
-      throw new Error(`OpenAI API error: ${response.statusText}`);
+      const errorText = await response.text();
+      console.error('❌ API Response Status:', response.status);
+      console.error('❌ API Response:', errorText);
+      throw new Error(`OpenAI API error (${response.status}): ${errorText}`);
     }
 
     if (!response.body) {
