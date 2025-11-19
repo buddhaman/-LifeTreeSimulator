@@ -121,43 +121,48 @@ export function drawBubble(
     ctx.font = '600 17px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
     ctx.fillStyle = '#1d1d1f';
     const titleLines = wrapText(ctx, node.title, currentWidth - 32);
-    titleLines.slice(0, 2).forEach((line, i) => {
+    titleLines.slice(0, 1).forEach((line, i) => {
       ctx.fillText(line, x + 16, y + 16 + i * 22);
     });
 
-    // Description
-    ctx.font = '400 14px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+    // Change description
+    ctx.font = '400 13px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
     ctx.fillStyle = '#6e6e73';
-    const descLines = wrapText(ctx, node.description, currentWidth - 32);
-    descLines.slice(0, 3).forEach((line, i) => {
-      ctx.fillText(line, x + 16, y + 60 + i * 20);
+    const changeLines = wrapText(ctx, node.change, currentWidth - 32);
+    changeLines.slice(0, 2).forEach((line, i) => {
+      ctx.fillText(line, x + 16, y + 45 + i * 18);
     });
 
-    // Probability badge
-    const probText = `${node.probability}%`;
-    ctx.font = '600 12px -apple-system, BlinkMacSystemFont, sans-serif';
-    const probMetrics = ctx.measureText(probText);
-    const pillWidth = probMetrics.width + 16;
-    const pillHeight = 22;
+    // Age badge
+    const ageText = `${node.ageYears}y ${node.ageWeeks}w`;
+    ctx.font = '600 11px -apple-system, BlinkMacSystemFont, sans-serif';
+    const ageMetrics = ctx.measureText(ageText);
+    const pillWidth = ageMetrics.width + 14;
+    const pillHeight = 20;
     const pillX = x + 16;
-    const pillY = y + currentHeight - pillHeight - 12;
+    const pillY = y + currentHeight - pillHeight - 10;
 
     ctx.fillStyle = '#f5f5f7';
     ctx.beginPath();
-    ctx.roundRect(pillX, pillY, pillWidth, pillHeight, 11);
+    ctx.roundRect(pillX, pillY, pillWidth, pillHeight, 10);
     ctx.fill();
 
     ctx.fillStyle = '#1d1d1f';
-    ctx.fillText(probText, pillX + 8, pillY + 5);
+    ctx.fillText(ageText, pillX + 7, pillY + 5);
 
-    // Tags
-    if (node.tags.length > 0) {
-      const tagsX = pillX + pillWidth + 8;
-      ctx.font = '400 11px -apple-system, BlinkMacSystemFont, sans-serif';
-      ctx.fillStyle = '#86868b';
-      const tagText = node.tags.slice(0, 2).join(' · ');
-      ctx.fillText(tagText, tagsX, pillY + 6);
-    }
+    // Income badge
+    const incomeText = `$${node.monthlyIncome}`;
+    const incomeMetrics = ctx.measureText(incomeText);
+    const incomePillWidth = incomeMetrics.width + 14;
+    const incomePillX = pillX + pillWidth + 6;
+
+    ctx.fillStyle = '#f5f5f7';
+    ctx.beginPath();
+    ctx.roundRect(incomePillX, pillY, incomePillWidth, pillHeight, 10);
+    ctx.fill();
+
+    ctx.fillStyle = '#34d399';
+    ctx.fillText(incomeText, incomePillX + 7, pillY + 5);
   }
 }
 

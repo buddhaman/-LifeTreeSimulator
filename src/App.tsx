@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Camera2D } from './Camera2D';
 import { graph, initializeGraph, updatePhysics, addNode, createNode, isLeafNode, Node, physicsConfig } from './graph';
 import { render, getExpandButtonBounds } from './renderer';
-import { Scenario } from './api';
+import { generateChildScenarios } from './openai';
 import './App.css';
 
 function App() {
@@ -243,57 +243,42 @@ function App() {
   }, [hoveredNodeId, hoveredButtonNodeId, draggedNodeId]);
 
   // Expand node - generate children
-  const expandNode = (nodeId: number) => {
+  const expandNode = async (nodeId: number) => {
     const node = graph.nodes.find(n => n.id === nodeId);
     if (!node || node.expanded) return;
 
     // Mark as expanded
     node.expanded = true;
 
-    // Generate sample children (placeholder for Claude API)
-    const scenarios = generateSampleScenarios(node);
+    try {
+      // Generate scenarios using OpenAI
+      const scenarios = await generateChildScenarios(node, 3);
 
-    scenarios.forEach((scenario) => {
-      const childId = graph.nodes.length;
-      const child = createNode(
-        childId,
-        scenario.title,
-        scenario.description,
-        scenario.probability,
-        scenario.tags,
-        nodeId
-      );
-      addNode(child);
-    });
+      scenarios.forEach((scenario) => {
+        const childId = graph.nodes.length;
+        const child = createNode(
+          childId,
+          scenario.title,
+          scenario.change,
+          scenario.ageYears,
+          scenario.ageWeeks,
+          scenario.location,
+          scenario.relationshipStatus,
+          scenario.livingSituation,
+          scenario.careerSituation,
+          scenario.monthlyIncome,
+          nodeId
+        );
+        addNode(child);
+      });
 
-    // Physics simulation will handle layout automatically
-    setNodeCount(graph.nodes.length);
-  };
-
-  // Placeholder for Claude API - generates sample scenarios
-  const generateSampleScenarios = (_parentNode: Node): Scenario[] => {
-    const scenarios: Scenario[] = [
-      {
-        title: 'Career Advancement',
-        description: 'You take a risk and pursue a promotion at work.',
-        probability: 65,
-        tags: ['career', 'growth'],
-      },
-      {
-        title: 'New Skill',
-        description: 'You decide to learn something completely new.',
-        probability: 80,
-        tags: ['education', 'personal'],
-      },
-      {
-        title: 'Relationship Change',
-        description: 'A significant change in your personal life.',
-        probability: 45,
-        tags: ['personal', 'social'],
-      },
-    ];
-
-    return scenarios;
+      // Physics simulation will handle layout automatically
+      setNodeCount(graph.nodes.length);
+    } catch (error) {
+      console.error('Failed to generate scenarios:', error);
+      // Revert expanded state on error
+      node.expanded = false;
+    }
   };
 
   // Reset camera
@@ -441,22 +426,32 @@ function App() {
                 <h3>Selected Scenario</h3>
                 <div className="node-details">
                   <h4>{selectedNode.title}</h4>
-                  <p className="description">{selectedNode.description}</p>
+                  <p className="description">{selectedNode.change}</p>
                   <div className="node-metadata">
                     <div className="probability">
-                      <span className="label">Probability:</span>
-                      <span className="value">{selectedNode.probability}%</span>
+                      <span className="label">Age:</span>
+                      <span className="value">{selectedNode.ageYears}y {selectedNode.ageWeeks}w</span>
                     </div>
-                    {selectedNode.tags.length > 0 && (
-                      <div className="tags">
-                        <span className="label">Tags:</span>
-                        <div className="tag-list">
-                          {selectedNode.tags.map((tag, i) => (
-                            <span key={i} className="tag">{tag}</span>
-                          ))}
-                        </div>
-                      </div>
-                    )}
+                    <div className="probability">
+                      <span className="label">Location:</span>
+                      <span className="value">{selectedNode.location}</span>
+                    </div>
+                    <div className="probability">
+                      <span className="label">Relationship:</span>
+                      <span className="value">{selectedNode.relationshipStatus}</span>
+                    </div>
+                    <div className="probability">
+                      <span className="label">Living:</span>
+                      <span className="value">{selectedNode.livingSituation}</span>
+                    </div>
+                    <div className="probability">
+                      <span className="label">Career:</span>
+                      <span className="value">{selectedNode.careerSituation}</span>
+                    </div>
+                    <div className="probability">
+                      <span className="label">Income:</span>
+                      <span className="value">${selectedNode.monthlyIncome}/mo</span>
+                    </div>
                   </div>
                 </div>
               </div>

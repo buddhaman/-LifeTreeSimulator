@@ -2,9 +2,14 @@
 export interface Node {
   id: number;
   title: string;
-  description: string;
-  probability: number;
-  tags: string[];
+  change: string; // One sentence describing what changed
+  ageYears: number; // Whole years of age after the event
+  ageWeeks: number; // Weeks beyond the years (0-51)
+  location: string; // Current location
+  relationshipStatus: string; // Relationship status
+  livingSituation: string; // Living situation (e.g., renting, own house)
+  careerSituation: string; // Career situation (e.g., student, working)
+  monthlyIncome: number; // Net monthly income
   parentId: number | null;
   x: number;
   y: number;
@@ -48,9 +53,14 @@ export function getGrowthFactor(node: Node): number {
 export function createNode(
   id: number,
   title: string,
-  description: string,
-  probability: number,
-  tags: string[] = [],
+  change: string,
+  ageYears: number,
+  ageWeeks: number,
+  location: string,
+  relationshipStatus: string,
+  livingSituation: string,
+  careerSituation: string,
+  monthlyIncome: number,
   parentId: number | null = null
 ): Node {
   // Initialize near parent if it exists
@@ -71,9 +81,14 @@ export function createNode(
   return {
     id,
     title,
-    description,
-    probability,
-    tags,
+    change,
+    ageYears,
+    ageWeeks,
+    location,
+    relationshipStatus,
+    livingSituation,
+    careerSituation,
+    monthlyIncome,
     parentId,
     x: initialX,
     y: initialY,
@@ -291,13 +306,18 @@ export function initializeGraph(): void {
   graph.nodes = [];
   graph.edges = [];
 
-  // Root node
+  // Root node - starting point
   const root = createNode(
     0,
     'Your Life Today',
-    'You are at a crossroads. What path will you take?',
-    100,
-    ['present', 'start']
+    'Starting your life simulation journey',
+    25, // 25 years old
+    0,  // 0 weeks
+    'San Francisco, CA',
+    'Single',
+    'Renting apartment',
+    'Software Engineer',
+    4500 // $4,500/month
   );
   addNode(root);
 
@@ -305,9 +325,14 @@ export function initializeGraph(): void {
   const child1 = createNode(
     1,
     'Stay the Course',
-    'Continue on your current path with minor adjustments.',
-    75,
-    ['stability', 'safe'],
+    'Continued working at current company, got small raise',
+    25,
+    26, // 6 months later
+    'San Francisco, CA',
+    'Single',
+    'Renting apartment',
+    'Software Engineer',
+    4800,
     0
   );
   addNode(child1);
@@ -315,9 +340,14 @@ export function initializeGraph(): void {
   const child2 = createNode(
     2,
     'Take a Risk',
-    'Make a bold change that could transform everything.',
-    45,
-    ['risk', 'growth'],
+    'Quit job to join an exciting startup',
+    25,
+    13, // 3 months later
+    'San Francisco, CA',
+    'Single',
+    'Renting apartment',
+    'Startup Engineer',
+    5500,
     0
   );
   addNode(child2);
@@ -325,33 +355,17 @@ export function initializeGraph(): void {
   const child3 = createNode(
     3,
     'Explore Options',
-    'Research and consider new possibilities before deciding.',
-    85,
-    ['research', 'careful'],
+    'Started freelancing part-time on weekends',
+    25,
+    8, // 2 months later
+    'San Francisco, CA',
+    'Single',
+    'Renting apartment',
+    'Software Engineer & Freelancer',
+    5200,
     0
   );
   addNode(child3);
-
-  // Second level children (from child1)
-  const grandchild1 = createNode(
-    4,
-    'Career Focus',
-    'Double down on your professional development.',
-    70,
-    ['career', 'ambition'],
-    1
-  );
-  addNode(grandchild1);
-
-  const grandchild2 = createNode(
-    5,
-    'Life Balance',
-    'Prioritize work-life balance and personal wellness.',
-    80,
-    ['wellness', 'balance'],
-    1
-  );
-  addNode(grandchild2);
 
   // Physics will handle layout dynamically
 }
