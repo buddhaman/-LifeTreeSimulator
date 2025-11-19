@@ -245,9 +245,9 @@ export function drawEdge(ctx: CanvasRenderingContext2D, fromNode: Node, toNode: 
     const glowIntensity = 0.6 + Math.sin(Date.now() / 200) * 0.4; // Pulsing effect
     ctx.shadowColor = `rgba(52, 211, 153, ${glowIntensity})`;
     ctx.shadowBlur = 20;
-    ctx.fillStyle = `rgba(52, 211, 153, ${0.3 + glowIntensity * 0.2})`;
+    ctx.fillStyle = `rgba(52, 211, 153, ${0.6 + glowIntensity * 0.2})`;
   } else {
-    ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
+    ctx.fillStyle = 'rgba(180, 180, 195, 1)'; // Light gray, solid and always visible
   }
 
   // Draw tapered path by creating a polygon along the bezier curve
@@ -312,6 +312,49 @@ export function drawEdge(ctx: CanvasRenderingContext2D, fromNode: Node, toNode: 
   ctx.restore();
 }
 
+// Draw subtle grid with plus signs at intersections
+function drawGrid(ctx: CanvasRenderingContext2D, camera: Camera2D): void {
+  const { width, height } = ctx.canvas;
+
+  // Calculate world bounds visible on screen
+  const topLeft = camera.screenToWorld(0, 0);
+  const bottomRight = camera.screenToWorld(width, height);
+
+  const gridSize = 100; // Grid spacing in world units
+  const plusSize = 3; // Size of plus sign
+
+  ctx.save();
+
+  // Calculate grid bounds (snap to grid)
+  const startX = Math.floor(topLeft.x / gridSize) * gridSize;
+  const startY = Math.floor(topLeft.y / gridSize) * gridSize;
+  const endX = Math.ceil(bottomRight.x / gridSize) * gridSize;
+  const endY = Math.ceil(bottomRight.y / gridSize) * gridSize;
+
+  ctx.strokeStyle = 'rgba(190, 190, 200, 1)'; // Light gray, always visible
+  ctx.lineWidth = 2;
+  ctx.lineCap = 'round';
+
+  // Draw plus signs at grid intersections
+  for (let x = startX; x <= endX; x += gridSize) {
+    for (let y = startY; y <= endY; y += gridSize) {
+      // Horizontal line of plus
+      ctx.beginPath();
+      ctx.moveTo(x - plusSize, y);
+      ctx.lineTo(x + plusSize, y);
+      ctx.stroke();
+
+      // Vertical line of plus
+      ctx.beginPath();
+      ctx.moveTo(x, y - plusSize);
+      ctx.lineTo(x, y + plusSize);
+      ctx.stroke();
+    }
+  }
+
+  ctx.restore();
+}
+
 // Main render function
 export function render(
   ctx: CanvasRenderingContext2D,
@@ -330,6 +373,9 @@ export function render(
 
   // Apply camera transform
   camera.applyTransform(ctx);
+
+  // Draw grid first (behind everything)
+  drawGrid(ctx, camera);
 
   // Draw edges
   graph.edges.forEach(edge => {
