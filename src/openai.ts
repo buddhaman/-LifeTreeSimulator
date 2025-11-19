@@ -169,7 +169,8 @@ Make sure one scenario is completely wild and unexpected!
   console.log('SYSTEM PROMPT:', systemPrompt);
   console.log('\nUSER PROMPT:', userPrompt);
   console.log('\nSCHEMA:', JSON.stringify(scenariosSchema, null, 2));
-  console.log('\nMAX TOKENS:', 128000);
+  console.log('\nREASONING EFFORT: low');
+  console.log('MAX TOKENS:', 4000);
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -192,7 +193,8 @@ Make sure one scenario is completely wild and unexpected!
             schema: scenariosSchema
           }
         },
-        max_completion_tokens: 128000
+        reasoning_effort: "low",
+        max_completion_tokens: 4000
       })
     });
 
