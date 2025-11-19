@@ -118,8 +118,8 @@ export interface PhysicsConfig {
 export const physicsConfig: PhysicsConfig = {
   repulsionStrength: 30000,
   repulsionRange: 400,
-  springStrength: 0.01,
-  springLength: 300,
+  springStrength: 0.076,
+  springLength: 520,
   friction: 0.85,
   gravityStrength: 0.15,
   maxVelocity: 20,
