@@ -49,7 +49,7 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
   return lines;
 }
 
-// Draw a single bubble (node)
+// Draw a single bubble (node) - Apple-style design
 export function drawBubble(
   ctx: CanvasRenderingContext2D,
   node: Node,
@@ -58,104 +58,125 @@ export function drawBubble(
 ): void {
   const x = node.x - node.width / 2;
   const y = node.y - node.height / 2;
-  const radius = 12;
+  const radius = 16; // Larger radius for smoother corners
 
-  // Shadow
   ctx.save();
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.2)';
-  ctx.shadowBlur = isHovered ? 20 : 10;
+
+  // Apple-style shadow (softer, more diffused)
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.12)';
+  ctx.shadowBlur = isHovered ? 30 : 20;
   ctx.shadowOffsetX = 0;
-  ctx.shadowOffsetY = isHovered ? 6 : 4;
+  ctx.shadowOffsetY = isHovered ? 8 : 4;
 
-  // Background gradient
-  const gradient = ctx.createLinearGradient(x, y, x, y + node.height);
-  const hue = (node.probability * 1.2) % 360;
-  gradient.addColorStop(0, `hsl(${hue}, 70%, ${isHovered ? 65 : 60}%)`);
-  gradient.addColorStop(1, `hsl(${hue}, 60%, ${isHovered ? 50 : 45}%)`);
-
-  ctx.fillStyle = gradient;
+  // White/gray card background
+  const bgGray = isHovered ? 252 : 255;
+  ctx.fillStyle = `rgb(${bgGray}, ${bgGray}, ${bgGray})`;
   drawRoundedRect(ctx, x, y, node.width, node.height, radius);
   ctx.fill();
 
-  // Border
+  ctx.restore();
+  ctx.save();
+
+  // Subtle border
   if (isSelected) {
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.8)';
-    ctx.lineWidth = 3;
+    // Apple blue accent for selection
+    ctx.strokeStyle = 'rgba(0, 122, 255, 0.8)';
+    ctx.lineWidth = 2.5;
+    drawRoundedRect(ctx, x, y, node.width, node.height, radius);
     ctx.stroke();
-  } else if (isHovered) {
-    ctx.strokeStyle = 'rgba(255, 255, 255, 0.5)';
-    ctx.lineWidth = 2;
+  } else {
+    // Very subtle gray border
+    ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)';
+    ctx.lineWidth = 1;
+    drawRoundedRect(ctx, x, y, node.width, node.height, radius);
     ctx.stroke();
   }
 
   ctx.restore();
 
-  // Text
-  ctx.fillStyle = '#fff';
+  // Text - dark gray for good contrast on white
   ctx.textAlign = 'left';
   ctx.textBaseline = 'top';
 
-  // Title
-  ctx.font = 'bold 16px sans-serif';
-  const titleLines = wrapText(ctx, node.title, node.width - 20);
+  // Title - SF Pro-like font (using system font stack)
+  ctx.font = '600 17px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+  ctx.fillStyle = '#1d1d1f'; // Apple's dark text color
+  const titleLines = wrapText(ctx, node.title, node.width - 32);
   titleLines.slice(0, 2).forEach((line, i) => {
-    ctx.fillText(line, x + 10, y + 10 + i * 20);
+    ctx.fillText(line, x + 16, y + 16 + i * 22);
   });
 
-  // Description
-  ctx.font = '13px sans-serif';
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.9)';
-  const descLines = wrapText(ctx, node.description, node.width - 20);
+  // Description - lighter gray
+  ctx.font = '400 14px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+  ctx.fillStyle = '#6e6e73'; // Apple's secondary text color
+  const descLines = wrapText(ctx, node.description, node.width - 32);
   descLines.slice(0, 3).forEach((line, i) => {
-    ctx.fillText(line, x + 10, y + 50 + i * 18);
+    ctx.fillText(line, x + 16, y + 60 + i * 20);
   });
 
-  // Probability
-  ctx.font = 'bold 12px sans-serif';
-  ctx.fillStyle = 'rgba(255, 255, 255, 0.8)';
-  ctx.fillText(`${node.probability}%`, x + 10, y + node.height - 25);
+  // Probability badge (Apple-style pill)
+  const probText = `${node.probability}%`;
+  ctx.font = '600 12px -apple-system, BlinkMacSystemFont, sans-serif';
+  const probMetrics = ctx.measureText(probText);
+  const pillWidth = probMetrics.width + 16;
+  const pillHeight = 22;
+  const pillX = x + 16;
+  const pillY = y + node.height - pillHeight - 12;
 
-  // Tags
+  // Pill background (light gray)
+  ctx.fillStyle = '#f5f5f7';
+  ctx.beginPath();
+  ctx.roundRect(pillX, pillY, pillWidth, pillHeight, 11);
+  ctx.fill();
+
+  // Pill text
+  ctx.fillStyle = '#1d1d1f';
+  ctx.fillText(probText, pillX + 8, pillY + 5);
+
+  // Tags (if space allows)
   if (node.tags.length > 0) {
-    ctx.font = '10px sans-serif';
-    ctx.fillStyle = 'rgba(255, 255, 255, 0.6)';
-    const tagText = node.tags.slice(0, 2).join(', ');
-    ctx.fillText(tagText, x + 10, y + node.height - 10);
+    const tagsX = pillX + pillWidth + 8;
+    ctx.font = '400 11px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.fillStyle = '#86868b'; // Very light gray for tags
+    const tagText = node.tags.slice(0, 2).join(' · ');
+    ctx.fillText(tagText, tagsX, pillY + 6);
   }
 }
 
-// Draw expand button on leaf nodes
+// Draw expand button on leaf nodes - Apple-style
 export function drawExpandButton(
   ctx: CanvasRenderingContext2D,
   node: Node,
   isHovered: boolean = false
 ): void {
-  const buttonSize = 32;
-  const buttonX = node.x - buttonSize / 2;
-  const buttonY = node.y - node.height / 2 - buttonSize - 10; // Above the node
+  const buttonSize = 28;
+  const buttonY = node.y - node.height / 2 - buttonSize - 12; // Above the node
+  const centerX = node.x;
+  const centerY = buttonY + buttonSize / 2;
 
   ctx.save();
 
-  // Shadow
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.3)';
-  ctx.shadowBlur = isHovered ? 10 : 5;
+  // Apple-style shadow
+  ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
+  ctx.shadowBlur = isHovered ? 12 : 8;
   ctx.shadowOffsetX = 0;
   ctx.shadowOffsetY = 2;
 
-  // Circle background
-  ctx.fillStyle = isHovered ? 'rgba(102, 126, 234, 1)' : 'rgba(80, 100, 200, 0.9)';
+  // Circle background - Apple blue with subtle hover state
+  ctx.fillStyle = isHovered ? '#0071e3' : '#007aff'; // Apple's blue shades
   ctx.beginPath();
-  ctx.arc(node.x, buttonY + buttonSize / 2, buttonSize / 2, 0, Math.PI * 2);
+  ctx.arc(centerX, centerY, buttonSize / 2, 0, Math.PI * 2);
   ctx.fill();
 
-  // Plus sign
-  ctx.strokeStyle = '#fff';
-  ctx.lineWidth = 3;
+  ctx.restore();
+  ctx.save();
+
+  // Plus sign - crisp and clean
+  ctx.strokeStyle = '#ffffff';
+  ctx.lineWidth = 2.5;
   ctx.lineCap = 'round';
 
-  const plusSize = 12;
-  const centerX = node.x;
-  const centerY = buttonY + buttonSize / 2;
+  const plusSize = 10;
 
   // Horizontal line
   ctx.beginPath();
@@ -174,19 +195,19 @@ export function drawExpandButton(
 
 // Get expand button bounds for hit testing
 export function getExpandButtonBounds(node: Node) {
-  const buttonSize = 32;
+  const buttonSize = 28;
   return {
     x: node.x - buttonSize / 2,
-    y: node.y - node.height / 2 - buttonSize - 10,
+    y: node.y - node.height / 2 - buttonSize - 12,
     width: buttonSize,
     height: buttonSize,
     centerX: node.x,
-    centerY: node.y - node.height / 2 - buttonSize / 2 - 10,
+    centerY: node.y - node.height / 2 - buttonSize / 2 - 12,
     radius: buttonSize / 2
   };
 }
 
-// Draw an edge (bezier curve) - from parent (bottom) to child (top)
+// Draw an edge (bezier curve) - from parent to child with tapered thickness
 export function drawEdge(ctx: CanvasRenderingContext2D, fromNode: Node, toNode: Node): void {
   const fromX = fromNode.x;
   const fromY = fromNode.y - fromNode.height / 2; // Top of parent
@@ -195,19 +216,38 @@ export function drawEdge(ctx: CanvasRenderingContext2D, fromNode: Node, toNode: 
 
   const controlOffset = Math.abs(toY - fromY) * 0.5;
 
-  ctx.strokeStyle = 'rgba(100, 100, 100, 0.3)';
-  ctx.lineWidth = 2;
-  ctx.beginPath();
-  ctx.moveTo(fromX, fromY);
-  ctx.bezierCurveTo(
-    fromX,
-    fromY - controlOffset,
-    toX,
-    toY + controlOffset,
-    toX,
-    toY
-  );
-  ctx.stroke();
+  // Create gradient for tapered effect (thick at parent, thin at child)
+  const gradient = ctx.createLinearGradient(fromX, fromY, toX, toY);
+  gradient.addColorStop(0, 'rgba(0, 0, 0, 0.18)'); // Slightly darker at parent
+  gradient.addColorStop(1, 'rgba(0, 0, 0, 0.08)'); // Lighter at child
+
+  ctx.save();
+
+  // Draw multiple bezier curves with decreasing width for taper effect
+  for (let i = 0; i < 3; i++) {
+    const t = i / 3;
+    const width = 3.5 - (t * 2); // From 3.5px to 1.5px
+    const alpha = 0.15 - (t * 0.05); // Fade slightly
+
+    ctx.strokeStyle = `rgba(0, 0, 0, ${alpha})`;
+    ctx.lineWidth = width;
+    ctx.lineCap = 'round';
+    ctx.lineJoin = 'round';
+
+    ctx.beginPath();
+    ctx.moveTo(fromX, fromY);
+    ctx.bezierCurveTo(
+      fromX,
+      fromY - controlOffset,
+      toX,
+      toY + controlOffset,
+      toX,
+      toY
+    );
+    ctx.stroke();
+  }
+
+  ctx.restore();
 }
 
 // Main render function
@@ -221,9 +261,9 @@ export function render(
 ): void {
   const { width, height } = ctx.canvas;
 
-  // Clear canvas
+  // Clear canvas with Apple-style light background
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.fillStyle = '#1a1a2e';
+  ctx.fillStyle = '#f5f5f7'; // Apple's light gray background
   ctx.fillRect(0, 0, width, height);
 
   // Apply camera transform

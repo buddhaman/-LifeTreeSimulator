@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from 'react';
 import { Camera2D } from './Camera2D';
-import { graph, initializeGraph, updatePhysics, addNode, createNode, isLeafNode, Node } from './graph';
+import { graph, initializeGraph, updatePhysics, addNode, createNode, isLeafNode, Node, physicsConfig } from './graph';
 import { render, getExpandButtonBounds } from './renderer';
 import { Scenario } from './api';
 import './App.css';
@@ -17,6 +17,8 @@ function App() {
   const mouseDownPosRef = useRef({ x: 0, y: 0 });
   const lastMouseRef = useRef({ x: 0, y: 0 });
   const [nodeCount, setNodeCount] = useState(0);
+  const [showPhysics, setShowPhysics] = useState(false);
+  const [, forceUpdate] = useState(0); // Force re-render for sliders
   
   const DRAG_THRESHOLD = 5; // pixels
 
@@ -40,8 +42,19 @@ function App() {
     // Set initial selected node to root
     setSelectedNodeId(0);
 
+    // Add wheel listener directly to canvas (not through React) to allow preventDefault
+    const handleWheel = (e: WheelEvent) => {
+      e.preventDefault();
+      const camera = cameraRef.current;
+      if (!camera) return;
+      camera.zoomAt(e.clientX, e.clientY, -e.deltaY);
+    };
+
+    canvas.addEventListener('wheel', handleWheel, { passive: false });
+
     return () => {
       window.removeEventListener('resize', resizeCanvas);
+      canvas.removeEventListener('wheel', handleWheel);
     };
   }, []);
 
@@ -193,15 +206,6 @@ function App() {
     }
   };
 
-  // Wheel handler for zoom
-  const handleWheel = (e: React.WheelEvent<HTMLCanvasElement>) => {
-    e.preventDefault();
-    const camera = cameraRef.current;
-    if (!camera) return;
-
-    camera.zoomAt(e.clientX, e.clientY, -e.deltaY);
-  };
-
   // Update cursor based on hover state
   useEffect(() => {
     if (canvasRef.current && !isDraggingRef.current) {
@@ -278,7 +282,6 @@ function App() {
         onMouseMove={handleMouseMove}
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
-        onWheel={handleWheel}
       />
       <div className="sidebar">
         <h1>Life Sim</h1>
@@ -288,6 +291,120 @@ function App() {
           <button onClick={handleReset}>Reset View</button>
         </div>
 
+        <div className="physics-controls">
+          <h3 onClick={() => setShowPhysics(!showPhysics)} style={{ cursor: 'pointer' }}>
+            Physics {showPhysics ? '▼' : '▶'}
+          </h3>
+          {showPhysics && (
+            <div className="physics-sliders">
+              <div className="slider-group">
+                <label>Repulsion Strength: {physicsConfig.repulsionStrength.toFixed(0)}</label>
+                <input
+                  type="range"
+                  min="0"
+                  max="100000"
+                  step="1000"
+                  value={physicsConfig.repulsionStrength}
+                  onChange={(e) => {
+                    physicsConfig.repulsionStrength = Number(e.target.value);
+                    forceUpdate(v => v + 1);
+                  }}
+                />
+              </div>
+              
+              <div className="slider-group">
+                <label>Repulsion Range: {physicsConfig.repulsionRange.toFixed(0)}</label>
+                <input
+                  type="range"
+                  min="100"
+                  max="1000"
+                  step="10"
+                  value={physicsConfig.repulsionRange}
+                  onChange={(e) => {
+                    physicsConfig.repulsionRange = Number(e.target.value);
+                    forceUpdate(v => v + 1);
+                  }}
+                />
+              </div>
+              
+              <div className="slider-group">
+                <label>Spring Strength: {physicsConfig.springStrength.toFixed(3)}</label>
+                <input
+                  type="range"
+                  min="0"
+                  max="0.1"
+                  step="0.001"
+                  value={physicsConfig.springStrength}
+                  onChange={(e) => {
+                    physicsConfig.springStrength = Number(e.target.value);
+                    forceUpdate(v => v + 1);
+                  }}
+                />
+              </div>
+              
+              <div className="slider-group">
+                <label>Spring Length: {physicsConfig.springLength.toFixed(0)}</label>
+                <input
+                  type="range"
+                  min="100"
+                  max="600"
+                  step="10"
+                  value={physicsConfig.springLength}
+                  onChange={(e) => {
+                    physicsConfig.springLength = Number(e.target.value);
+                    forceUpdate(v => v + 1);
+                  }}
+                />
+              </div>
+              
+              <div className="slider-group">
+                <label>Friction: {physicsConfig.friction.toFixed(2)}</label>
+                <input
+                  type="range"
+                  min="0.5"
+                  max="0.99"
+                  step="0.01"
+                  value={physicsConfig.friction}
+                  onChange={(e) => {
+                    physicsConfig.friction = Number(e.target.value);
+                    forceUpdate(v => v + 1);
+                  }}
+                />
+              </div>
+              
+              <div className="slider-group">
+                <label>Gravity Strength: {physicsConfig.gravityStrength.toFixed(2)}</label>
+                <input
+                  type="range"
+                  min="0"
+                  max="1"
+                  step="0.01"
+                  value={physicsConfig.gravityStrength}
+                  onChange={(e) => {
+                    physicsConfig.gravityStrength = Number(e.target.value);
+                    forceUpdate(v => v + 1);
+                  }}
+                />
+              </div>
+              
+              <div className="slider-group">
+                <label>Max Velocity: {physicsConfig.maxVelocity.toFixed(0)}</label>
+                <input
+                  type="range"
+                  min="5"
+                  max="50"
+                  step="1"
+                  value={physicsConfig.maxVelocity}
+                  onChange={(e) => {
+                    physicsConfig.maxVelocity = Number(e.target.value);
+                    forceUpdate(v => v + 1);
+                  }}
+                />
+              </div>
+            </div>
+          )}
+        </div>
+        
         {selectedNodeId !== null && (() => {
           const selectedNode = graph.nodes.find(n => n.id === selectedNodeId);
           if (selectedNode) {

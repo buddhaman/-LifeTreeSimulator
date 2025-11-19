@@ -104,23 +104,34 @@ export function isLeafNode(nodeId: number): boolean {
   return getChildren(nodeId).length === 0;
 }
 
-// Physics-based force simulation parameters
-const REPULSION_STRENGTH = 50000; // Repulsion force between nodes
-const SPRING_STRENGTH = 0.01; // Spring force for parent-child connections
-const SPRING_LENGTH = 200; // Desired distance between parent-child
-const FRICTION = 0.85; // Damping factor (0-1, lower = more friction)
-const GRAVITY_Y = 0.5; // Upward gravity (very low)
+// Physics configuration - exported so UI can modify
+export interface PhysicsConfig {
+  repulsionStrength: number;
+  repulsionRange: number;
+  springStrength: number;
+  springLength: number;
+  friction: number;
+  gravityStrength: number;
+  maxVelocity: number;
+}
+
+export const physicsConfig: PhysicsConfig = {
+  repulsionStrength: 40000,
+  repulsionRange: 400,
+  springStrength: 0.01,
+  springLength: 300,
+  friction: 0.85,
+  gravityStrength: 0.2, // 20x spring strength = 0.2
+  maxVelocity: 20,
+};
+
 const MIN_DISTANCE = 10; // Minimum distance for repulsion calculation
-const MAX_VELOCITY = 20; // Cap velocity to prevent instability
 
 // Physics simulation - update node positions based on forces
 export function updatePhysics(): void {
   if (graph.nodes.length === 0) return;
 
   const dt = 1; // timestep
-
-  // Calculate forces for each node
-  const forces: { x: number; y: number }[] = graph.nodes.map(() => ({ x: 0, y: 0 }));
 
   // 1. Repulsion between all nodes (prevent overlap)
   for (let i = 0; i < graph.nodes.length; i++) {
@@ -132,17 +143,19 @@ export function updatePhysics(): void {
       const dy = nodeB.y - nodeA.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
       
-      if (distance < MIN_DISTANCE) continue;
+      // Skip if too close or too far
+      if (distance < MIN_DISTANCE || distance > physicsConfig.repulsionRange) continue;
 
       // Coulomb-like repulsion (inverse square)
-      const force = REPULSION_STRENGTH / (distance * distance);
-      const fx = (dx / distance) * force;
-      const fy = (dy / distance) * force;
+      const force = physicsConfig.repulsionStrength / (distance * distance);
+      const fx = (dx / distance) * force * dt;
+      const fy = (dy / distance) * force * dt * 0.1; // Reduce vertical repulsion to 10%
 
-      forces[i].x -= fx;
-      forces[i].y -= fy;
-      forces[j].x += fx;
-      forces[j].y += fy;
+      // Apply impulse directly to velocities
+      nodeA.vx -= fx;
+      nodeA.vy -= fy;
+      nodeB.vx += fx;
+      nodeB.vy += fy;
     }
   }
 
@@ -160,43 +173,47 @@ export function updatePhysics(): void {
     if (distance < MIN_DISTANCE) return;
 
     // Hooke's law: F = k * (distance - restLength)
-    const force = SPRING_STRENGTH * (distance - SPRING_LENGTH);
-    const fx = (dx / distance) * force;
-    const fy = (dy / distance) * force;
+    const force = physicsConfig.springStrength * (distance - physicsConfig.springLength);
+    const fx = (dx / distance) * force * dt;
+    const fy = (dy / distance) * force * dt;
 
-    const parentIndex = graph.nodes.findIndex(n => n.id === parent.id);
-    const childIndex = graph.nodes.findIndex(n => n.id === child.id);
+    // Apply impulse directly to velocities
+    parent.vx += fx;
+    parent.vy += fy;
+    child.vx -= fx;
+    child.vy -= fy;
+  });
 
-    if (parentIndex !== -1) {
-      forces[parentIndex].x += fx;
-      forces[parentIndex].y += fy;
-    }
-    if (childIndex !== -1) {
-      forces[childIndex].x -= fx;
-      forces[childIndex].y -= fy;
+  // 3. Apply conditional upward gravity (only when below parent)
+  graph.nodes.forEach((node) => {
+    // Skip root node (no parent)
+    if (node.parentId === null) return;
+    
+    const parent = findNode(node.parentId);
+    if (!parent) return;
+    
+    // Check if node is below parent (higher y value = lower in screen space)
+    const yDiff = node.y - parent.y;
+    
+    // Apply gravity as soon as node goes below parent
+    if (yDiff > 0) {
+      // Apply upward impulse proportional to how far below it is
+      const gravityImpulse = physicsConfig.gravityStrength * yDiff * dt;
+      node.vy -= gravityImpulse; // Negative y is upward
     }
   });
 
-  // 3. Apply upward gravity (to orient tree upward)
-  graph.nodes.forEach((_node, i) => {
-    forces[i].y -= GRAVITY_Y; // Negative y is upward
-  });
-
-  // Update velocities and positions
-  graph.nodes.forEach((node, i) => {
-    // Apply forces to velocity
-    node.vx += forces[i].x * dt;
-    node.vy += forces[i].y * dt;
-
+  // Update positions and apply friction
+  graph.nodes.forEach((node) => {
     // Apply friction
-    node.vx *= FRICTION;
-    node.vy *= FRICTION;
+    node.vx *= physicsConfig.friction;
+    node.vy *= physicsConfig.friction;
 
     // Clamp velocity
     const speed = Math.sqrt(node.vx * node.vx + node.vy * node.vy);
-    if (speed > MAX_VELOCITY) {
-      node.vx = (node.vx / speed) * MAX_VELOCITY;
-      node.vy = (node.vy / speed) * MAX_VELOCITY;
+    if (speed > physicsConfig.maxVelocity) {
+      node.vx = (node.vx / speed) * physicsConfig.maxVelocity;
+      node.vy = (node.vy / speed) * physicsConfig.maxVelocity;
     }
 
     // Update position
