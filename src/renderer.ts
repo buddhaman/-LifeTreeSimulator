@@ -111,26 +111,28 @@ export function drawBubble(
 
   ctx.restore();
 
-  // Only draw text if node is fully grown
+  // Draw text content
   if (node.growthProgress >= 1) {
     // Text
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
 
-    // Title
+    // Title (allow 2 lines)
     ctx.font = '600 17px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
     ctx.fillStyle = '#1d1d1f';
     const titleLines = wrapText(ctx, node.title, currentWidth - 32);
-    titleLines.slice(0, 1).forEach((line, i) => {
+    const displayedTitleLines = titleLines.slice(0, 2);
+    displayedTitleLines.forEach((line, i) => {
       ctx.fillText(line, x + 16, y + 16 + i * 22);
     });
 
-    // Change description
+    // Change description (adjust position based on title line count)
+    const titleHeight = displayedTitleLines.length * 22;
     ctx.font = '400 13px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
     ctx.fillStyle = '#6e6e73';
     const changeLines = wrapText(ctx, node.change, currentWidth - 32);
     changeLines.slice(0, 2).forEach((line, i) => {
-      ctx.fillText(line, x + 16, y + 45 + i * 18);
+      ctx.fillText(line, x + 16, y + 16 + titleHeight + 7 + i * 18);
     });
 
     // Age badge

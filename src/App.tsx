@@ -250,34 +250,68 @@ function App() {
     // Mark as expanded
     node.expanded = true;
 
+    // Create 3 placeholder nodes immediately and start request
+    const placeholderNodes: Node[] = [];
+    for (let i = 0; i < 3; i++) {
+      const childId = graph.nodes.length;
+      const child = createNode(
+        childId,
+        'Loading...',
+        'Generating scenario...',
+        node.ageYears,
+        node.ageWeeks,
+        node.location,
+        node.relationshipStatus,
+        node.livingSituation,
+        node.careerSituation,
+        node.monthlyIncome,
+        nodeId
+      );
+      addNode(child);
+      placeholderNodes.push(child);
+    }
+
+    // Update node count to show new nodes
+    setNodeCount(graph.nodes.length);
+
     try {
-      // Generate scenarios using OpenAI
+      // Generate scenarios using OpenAI (request starts immediately)
       const scenarios = await generateChildScenarios(node, 3);
 
-      scenarios.forEach((scenario) => {
-        const childId = graph.nodes.length;
-        const child = createNode(
-          childId,
-          scenario.title,
-          scenario.change,
-          scenario.ageYears,
-          scenario.ageWeeks,
-          scenario.location,
-          scenario.relationshipStatus,
-          scenario.livingSituation,
-          scenario.careerSituation,
-          scenario.monthlyIncome,
-          nodeId
-        );
-        addNode(child);
+      // Update placeholder nodes with actual data and stop growing state
+      scenarios.forEach((scenario, index) => {
+        if (index < placeholderNodes.length) {
+          const child = placeholderNodes[index];
+          child.title = scenario.title;
+          child.change = scenario.change;
+          child.ageYears = scenario.ageYears;
+          child.ageWeeks = scenario.ageWeeks;
+          child.location = scenario.location;
+          child.relationshipStatus = scenario.relationshipStatus;
+          child.livingSituation = scenario.livingSituation;
+          child.careerSituation = scenario.careerSituation;
+          child.monthlyIncome = scenario.monthlyIncome;
+          // Set isGrowing to false now that request is complete
+          child.isGrowing = false;
+        }
       });
 
-      // Physics simulation will handle layout automatically
-      setNodeCount(graph.nodes.length);
     } catch (error) {
       console.error('Failed to generate scenarios:', error);
+      // Remove placeholder nodes on error
+      placeholderNodes.forEach(child => {
+        const nodeIndex = graph.nodes.findIndex(n => n.id === child.id);
+        if (nodeIndex !== -1) {
+          graph.nodes.splice(nodeIndex, 1);
+        }
+        const edgeIndex = graph.edges.findIndex(e => e.toId === child.id);
+        if (edgeIndex !== -1) {
+          graph.edges.splice(edgeIndex, 1);
+        }
+      });
       // Revert expanded state on error
       node.expanded = false;
+      setNodeCount(graph.nodes.length);
     }
   };
 

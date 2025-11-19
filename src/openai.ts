@@ -1,62 +1,74 @@
 // OpenAI integration for generating life simulation nodes
-import { Node } from './graph';
+import { Node, findNode } from './graph';
 
-// Schema for structured output
-const nodeSchema = {
+// Schema for structured output - array of 3 scenarios
+const scenariosSchema = {
   type: "object",
   properties: {
-    title: {
-      type: "string",
-      description: "Short label for the decision or event"
-    },
-    change: {
-      type: "string",
-      description: "One sentence describing what changed"
-    },
-    ageYears: {
-      type: "integer",
-      minimum: 0,
-      description: "Whole years of age after the event"
-    },
-    ageWeeks: {
-      type: "integer",
-      minimum: 0,
-      maximum: 51,
-      description: "Weeks beyond the years (0-51)"
-    },
-    location: {
-      type: "string",
-      description: "New location after the event"
-    },
-    relationshipStatus: {
-      type: "string",
-      description: "Relationship status after the event"
-    },
-    livingSituation: {
-      type: "string",
-      description: "Living situation (e.g., renting, own house, shared flat) after the event"
-    },
-    careerSituation: {
-      type: "string",
-      description: "Career situation after the event (e.g., student, working professional, freelancer)"
-    },
-    monthlyIncome: {
-      type: "number",
-      minimum: 0,
-      description: "Net monthly income after the event"
+    scenarios: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          title: {
+            type: "string",
+            description: "Short label for the decision or event"
+          },
+          change: {
+            type: "string",
+            description: "One sentence describing what changed"
+          },
+          ageYears: {
+            type: "integer",
+            minimum: 0,
+            description: "Whole years of age after the event"
+          },
+          ageWeeks: {
+            type: "integer",
+            minimum: 0,
+            maximum: 51,
+            description: "Weeks beyond the years (0-51)"
+          },
+          location: {
+            type: "string",
+            description: "New location after the event"
+          },
+          relationshipStatus: {
+            type: "string",
+            description: "Relationship status after the event"
+          },
+          livingSituation: {
+            type: "string",
+            description: "Living situation (e.g., renting, own house, shared flat) after the event"
+          },
+          careerSituation: {
+            type: "string",
+            description: "Career situation after the event (e.g., student, working professional, freelancer)"
+          },
+          monthlyIncome: {
+            type: "number",
+            minimum: 0,
+            description: "Net monthly income after the event"
+          }
+        },
+        required: [
+          "title",
+          "change",
+          "ageYears",
+          "ageWeeks",
+          "location",
+          "relationshipStatus",
+          "livingSituation",
+          "careerSituation",
+          "monthlyIncome"
+        ],
+        additionalProperties: false
+      },
+      minItems: 3,
+      maxItems: 3
     }
   },
-  required: [
-    "title",
-    "change",
-    "ageYears",
-    "ageWeeks",
-    "location",
-    "relationshipStatus",
-    "livingSituation",
-    "careerSituation",
-    "monthlyIncome"
-  ],
+  required: ["scenarios"],
   additionalProperties: false
 };
 
@@ -75,7 +87,24 @@ interface GeneratedNodeData {
 
 // Configuration
 const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY || '';
-const OPENAI_MODEL = 'gpt-4o-mini'; // or 'gpt-4o' for better results
+const OPENAI_MODEL = 'gpt-5-nano'; // Latest lightweight model (released Aug 2025)
+
+/**
+ * Build ancestry chain from node to root
+ */
+function getAncestryChain(node: Node): Node[] {
+  const chain: Node[] = [node];
+  let current = node;
+
+  while (current.parentId !== null) {
+    const parent = findNode(current.parentId);
+    if (!parent) break;
+    chain.unshift(parent);
+    current = parent;
+  }
+
+  return chain;
+}
 
 /**
  * Generate child scenarios from a parent node using OpenAI
@@ -92,75 +121,84 @@ export async function generateChildScenarios(
     return generateMockScenarios(parentNode, count);
   }
 
+  // Build ancestry chain
+  const ancestry = getAncestryChain(parentNode);
+
+  // Build life history from ancestry
+  const lifeHistory = ancestry.map((node, index) => {
+    if (index === 0) {
+      return `STARTING POINT:\n- Age: ${node.ageYears}y ${node.ageWeeks}w\n- ${node.change}\n- Location: ${node.location}\n- Relationship: ${node.relationshipStatus}\n- Living: ${node.livingSituation}\n- Career: ${node.careerSituation}\n- Income: $${node.monthlyIncome}/month`;
+    } else {
+      return `THEN:\n- Age: ${node.ageYears}y ${node.ageWeeks}w\n- ${node.change}\n- Location: ${node.location}\n- Relationship: ${node.relationshipStatus}\n- Living: ${node.livingSituation}\n- Career: ${node.careerSituation}\n- Income: $${node.monthlyIncome}/month`;
+    }
+  }).join('\n\n');
+
   const systemPrompt = `You are a life simulation engine that generates realistic future scenarios.
-Given a current life situation, you generate ${count} possible future scenarios.
+Given a person's life history, you generate exactly 3 diverse possible future scenarios.
 Each scenario should be a realistic life event or decision that could happen next.
-Output exactly one JSON object per scenario matching the provided schema.
-Keep changes realistic and incremental (small time jumps, gradual income changes).`;
+Keep changes realistic and incremental (small time jumps of weeks/months, gradual income changes).
+Make the scenarios meaningfully different from each other - explore different life paths.`;
 
-  const userPrompt = `Current situation:
-- Age: ${parentNode.ageYears} years, ${parentNode.ageWeeks} weeks
-- Location: ${parentNode.location}
-- Relationship: ${parentNode.relationshipStatus}
-- Living: ${parentNode.livingSituation}
-- Career: ${parentNode.careerSituation}
-- Income: $${parentNode.monthlyIncome}/month
-- Latest change: ${parentNode.change}
+  const userPrompt = `LIFE HISTORY:
 
-Generate ${count} possible future scenarios. Each should represent a realistic next step in this person's life.`;
+${lifeHistory}
+
+Based on this life journey, generate exactly 3 diverse possible next scenarios.
+Each should represent a different realistic direction this person's life could take from their current situation.`;
 
   try {
-    const results: GeneratedNodeData[] = [];
-
-    // Generate scenarios one at a time for better control
-    for (let i = 0; i < count; i++) {
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${OPENAI_API_KEY}`
+    const response = await fetch('https://api.openai.com/v1/chat/completions', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+        'Authorization': `Bearer ${OPENAI_API_KEY}`
+      },
+      body: JSON.stringify({
+        model: OPENAI_MODEL,
+        messages: [
+          { role: 'system', content: systemPrompt },
+          { role: 'user', content: userPrompt }
+        ],
+        response_format: {
+          type: 'json_schema',
+          json_schema: {
+            name: 'LifeSimulationScenarios',
+            strict: true,
+            schema: scenariosSchema
+          }
         },
-        body: JSON.stringify({
-          model: OPENAI_MODEL,
-          messages: [
-            { role: 'system', content: systemPrompt },
-            { role: 'user', content: userPrompt }
-          ],
-          response_format: {
-            type: 'json_schema',
-            json_schema: {
-              name: 'LifeSimulationNode',
-              strict: true,
-              schema: nodeSchema
-            }
-          },
-          temperature: 0.8,
-          max_tokens: 500
-        })
-      });
+        temperature: 0.9,
+        max_completion_tokens: 1500
+      })
+    });
 
-      if (!response.ok) {
-        throw new Error(`OpenAI API error: ${response.statusText}`);
-      }
-
-      const data = await response.json();
-      const content = data.choices[0]?.message?.content;
-
-      if (!content) {
-        throw new Error('No content in OpenAI response');
-      }
-
-      const parsed = JSON.parse(content) as GeneratedNodeData;
-
-      // Validate the data
-      if (!validateGeneratedNode(parsed)) {
-        throw new Error('Generated node failed validation');
-      }
-
-      results.push(parsed);
+    if (!response.ok) {
+      const errorData = await response.json().catch(() => ({ error: { message: response.statusText } }));
+      const errorMessage = errorData.error?.message || response.statusText || 'Unknown error';
+      throw new Error(`OpenAI API error: ${errorMessage}`);
     }
 
-    return results;
+    const data = await response.json();
+    const content = data.choices[0]?.message?.content;
+
+    if (!content) {
+      throw new Error('No content in OpenAI response');
+    }
+
+    const parsed = JSON.parse(content) as { scenarios: GeneratedNodeData[] };
+
+    // Validate all scenarios
+    if (!parsed.scenarios || parsed.scenarios.length !== 3) {
+      throw new Error('Expected exactly 3 scenarios');
+    }
+
+    for (const scenario of parsed.scenarios) {
+      if (!validateGeneratedNode(scenario)) {
+        throw new Error('Generated scenario failed validation');
+      }
+    }
+
+    return parsed.scenarios;
   } catch (error) {
     console.error('Error generating scenarios with OpenAI:', error);
     // Fallback to mock data

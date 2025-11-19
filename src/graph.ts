@@ -21,6 +21,7 @@ export interface Node {
   currentHeight: number;
   expanded: boolean;
   isGrowing: boolean;
+  isLoading: boolean; // True when waiting for API data
   growthProgress: number; // 0 to 1
 }
 
@@ -94,12 +95,13 @@ export function createNode(
     y: initialY,
     vx: 0,
     vy: 0,
-    targetWidth: 250,
-    targetHeight: 150,
-    currentWidth: isNew ? 0 : 250,
-    currentHeight: isNew ? 0 : 150,
+    targetWidth: 270,
+    targetHeight: 160,
+    currentWidth: isNew ? 0 : 270,
+    currentHeight: isNew ? 0 : 160,
     expanded: false,
     isGrowing: isNew,
+    isLoading: false,
     growthProgress: isNew ? 0 : 1,
   };
 }
@@ -160,7 +162,7 @@ export const physicsConfig: PhysicsConfig = {
 };
 
 const MIN_DISTANCE = 10;
-const GROWTH_DURATION = 3.0; // 3 seconds
+const GROWTH_DURATION = 1.5; // 1.5 seconds for size animation
 
 let lastUpdateTime = Date.now();
 
@@ -176,11 +178,10 @@ export function updatePhysics(): void {
 
   // Update growing nodes
   graph.nodes.forEach(node => {
-    if (node.isGrowing) {
+    if (node.isGrowing && node.growthProgress < 1) {
       node.growthProgress += deltaTime / GROWTH_DURATION;
       if (node.growthProgress >= 1) {
         node.growthProgress = 1;
-        node.isGrowing = false;
       }
       // Update size
       node.currentWidth = node.targetWidth * node.growthProgress;
@@ -306,66 +307,20 @@ export function initializeGraph(): void {
   graph.nodes = [];
   graph.edges = [];
 
-  // Root node - starting point
+  // Root node - starting point (only node at initialization)
   const root = createNode(
     0,
     'Your Life Today',
-    'Starting your life simulation journey',
-    25, // 25 years old
+    'Fresh graduate ready to start your career journey',
+    22, // 22 years old
     0,  // 0 weeks
-    'San Francisco, CA',
+    'Boston, MA',
     'Single',
-    'Renting apartment',
-    'Software Engineer',
-    4500 // $4,500/month
+    'Living with roommates',
+    'Recent CS Graduate',
+    0 // $0/month - just graduated
   );
   addNode(root);
-
-  // First level children
-  const child1 = createNode(
-    1,
-    'Stay the Course',
-    'Continued working at current company, got small raise',
-    25,
-    26, // 6 months later
-    'San Francisco, CA',
-    'Single',
-    'Renting apartment',
-    'Software Engineer',
-    4800,
-    0
-  );
-  addNode(child1);
-
-  const child2 = createNode(
-    2,
-    'Take a Risk',
-    'Quit job to join an exciting startup',
-    25,
-    13, // 3 months later
-    'San Francisco, CA',
-    'Single',
-    'Renting apartment',
-    'Startup Engineer',
-    5500,
-    0
-  );
-  addNode(child2);
-
-  const child3 = createNode(
-    3,
-    'Explore Options',
-    'Started freelancing part-time on weekends',
-    25,
-    8, // 2 months later
-    'San Francisco, CA',
-    'Single',
-    'Renting apartment',
-    'Software Engineer & Freelancer',
-    5200,
-    0
-  );
-  addNode(child3);
 
   // Physics will handle layout dynamically
 }
