@@ -1,81 +1,41 @@
 // OpenAI integration for generating life simulation nodes
 import { Node, findNode } from './graph';
 
-// Schema generator for structured output - configurable number of scenarios
-function createScenariosSchema(count: number) {
-  return {
-    type: "object",
-    properties: {
-      scenarios: {
-        type: "array",
-        items: {
-          type: "object",
-          properties: {
-            title: {
-              type: "string",
-              description: "Short label for the decision or event"
-            },
-            change: {
-              type: "string",
-              description: "One sentence describing what changed"
-            },
-            ageYears: {
-              type: "integer",
-              minimum: 0,
-              description: "Whole years of age after the event"
-            },
-            ageWeeks: {
-              type: "integer",
-              minimum: 0,
-              maximum: 51,
-              description: "Weeks beyond the years (0-51)"
-            },
-            location: {
-              type: "string",
-              description: "New location after the event"
-            },
-            relationshipStatus: {
-              type: "string",
-              description: "Relationship status after the event"
-            },
-            livingSituation: {
-              type: "string",
-              description: "Living situation (e.g., renting, own house, shared flat) after the event"
-            },
-            careerSituation: {
-              type: "string",
-              description: "Career situation after the event (e.g., student, working professional, freelancer)"
-            },
-            monthlyIncome: {
-              type: "number",
-              minimum: 0,
-              description: "Net monthly income after the event"
-            }
-          },
-          required: [
-            "title",
-            "change",
-            "ageYears",
-            "ageWeeks",
-            "location",
-            "relationshipStatus",
-            "livingSituation",
-            "careerSituation",
-            "monthlyIncome"
-          ],
-          additionalProperties: false
+// Schema for array of scenarios
+const scenariosSchema = {
+  type: "object",
+  properties: {
+    scenarios: {
+      type: "array",
+      items: {
+        type: "object",
+        properties: {
+          title: { type: "string" },
+          change: { type: "string" },
+          ageYears: { type: "integer", minimum: 0 },
+          ageWeeks: { type: "integer", minimum: 0, maximum: 51 },
+          location: { type: "string" },
+          relationshipStatus: { type: "string" },
+          livingSituation: { type: "string" },
+          careerSituation: { type: "string" },
+          monthlyIncome: { type: "number", minimum: 0 }
         },
-        minItems: count,
-        maxItems: count
-      }
-    },
-    required: ["scenarios"],
-    additionalProperties: false
-  };
-}
+        required: [
+          "title", "change", "ageYears", "ageWeeks", "location",
+          "relationshipStatus", "livingSituation", "careerSituation", "monthlyIncome"
+        ],
+        additionalProperties: false
+      },
+      minItems: 3,
+      maxItems: 3
+    }
+  },
+  required: ["scenarios"],
+  additionalProperties: false
+};
 
-// Response from OpenAI matching the schema
-interface GeneratedNodeData {
+// Response from OpenAI
+export interface GeneratedNodeData {
   title: string;
   change: string;
   ageYears: number;
@@ -89,7 +49,7 @@ interface GeneratedNodeData {
 
 // Configuration
 const OPENAI_API_KEY = import.meta.env.VITE_OPENAI_API_KEY || '';
-const OPENAI_MODEL = 'gpt-5-nano'; // Latest lightweight model (released Aug 2025)
+const OPENAI_MODEL = 'gpt-4o-mini';
 
 /**
  * Build ancestry chain from node to root
@@ -109,68 +69,60 @@ function getAncestryChain(node: Node): Node[] {
 }
 
 /**
- * Generate child scenarios from a parent node using OpenAI
+ * Generate child scenarios with streaming (collects full result at end)
  * @param parentNode The parent node to generate children from
  * @param count Number of scenarios to generate (default: 3)
  * @returns Array of generated node data
  */
-export async function generateChildScenarios(
+export async function generateChildScenariosStreaming(
   parentNode: Node,
-  count: number = 3
-): Promise<GeneratedNodeData[]> {
+  count: number = 3,
+  onNode: (node: GeneratedNodeData) => void
+): Promise<void> {
   if (!OPENAI_API_KEY) {
     console.warn('OPENAI_API_KEY not set, returning mock data');
-    return generateMockScenarios(parentNode, count);
+    const mockData = generateMockScenarios(parentNode, count);
+    for (const node of mockData) {
+      onNode(node);
+    }
+    return;
   }
 
   // Build ancestry chain
   const ancestry = getAncestryChain(parentNode);
 
-  // Build life history from ancestry
+  // Build life history
   const lifeHistory = ancestry.map((node, index) => {
     if (index === 0) {
-      return `STARTING POINT:\n- Age: ${node.ageYears}y ${node.ageWeeks}w\n- ${node.change}\n- Location: ${node.location}\n- Relationship: ${node.relationshipStatus}\n- Living: ${node.livingSituation}\n- Career: ${node.careerSituation}\n- Income: $${node.monthlyIncome}/month`;
+      return `START: Age ${node.ageYears}y ${node.ageWeeks}w - ${node.change} - ${node.location} - ${node.relationshipStatus} - ${node.livingSituation} - ${node.careerSituation} - $${node.monthlyIncome}/mo`;
     } else {
-      return `THEN:\n- Age: ${node.ageYears}y ${node.ageWeeks}w\n- ${node.change}\n- Location: ${node.location}\n- Relationship: ${node.relationshipStatus}\n- Living: ${node.livingSituation}\n- Career: ${node.careerSituation}\n- Income: $${node.monthlyIncome}/month`;
+      return `THEN: Age ${node.ageYears}y ${node.ageWeeks}w - ${node.change}`;
     }
-  }).join('\n\n');
+  }).join('\n');
 
-  const systemPrompt = `You are a life simulation engine that generates compelling future scenarios.
-Given a person's life history, you generate exactly ${count} diverse possible future scenarios.
-Each scenario should be a life event or decision that could happen next.
+  const systemPrompt = `Generate ${count} diverse life scenarios. Each should explore DIFFERENT aspects of life. Make them meaningfully different from each other.
 
-CRITICAL: Make scenarios span DIFFERENT LIFE DOMAINS. Don't focus only on career. Balance across:
-- Relationships & family (romance, marriage, kids, breakups, reunions)
-- Personal growth & hobbies (new passions, creative pursuits, skills)
-- Health & lifestyle (fitness journeys, health challenges, wellness changes)
-- Social & community (new friendships, community involvement, social shifts)
-- Location & adventure (moving cities/countries, travel, exploration)
-- Career & finances (job changes, business ventures, windfalls)
-- Unexpected events (accidents, discoveries, chance encounters)
+SCENARIO VARIETY:
+- Make 1-2 scenarios that are pretty varied and different from each other.
+- Make at least 1 scenario wacky, unexpected, or unusual - something surprising that could still happen but would be a wild turn of events
 
-IMPORTANT: One scenario MUST be totally unexpected and dramatic - a wild twist nobody would see coming.
-Examples: winning lottery, sudden inheritance, life-changing encounter, dramatic pivot, spontaneous adventure, shocking revelation.
+IMPORTANT AGE RULES:
+1. Each scenario must happen AFTER the current point in time. The age must be EQUAL TO OR GREATER than the current age (${parentNode.ageYears} years ${parentNode.ageWeeks} weeks). Never go backwards in time.
+2. Advance time by approximately 1-2 years per scenario.
+3. Keep life changes realistic for this timeframe.`;
 
-NOTE: When creating the wild scenario, DO NOT label it in the title (no "The wildcard:", "Wild:", "Unexpected:", etc).
-Just write a normal title that describes the event itself.`;
+  const userPrompt = `${lifeHistory}\n\nGenerate ${count} diverse future scenarios that happen 1-2 years AFTER the current point (age ${parentNode.ageYears}y ${parentNode.ageWeeks}w). Each scenario should advance time by roughly 1-2 years.`;
 
-  const userPrompt = `LIFE HISTORY:
-
-${lifeHistory}
-
-Generate exactly ${count} diverse scenarios exploring DIFFERENT aspects of life (not just career).
-Spread across multiple life domains: relationships, personal growth, adventures, social life, health, unexpected events.
-Make sure one scenario is completely wild and unexpected!
-(Don't label the wild one as "wildcard" or "unexpected" in the title - just describe it normally)`;
-
-  const scenariosSchema = createScenariosSchema(count);
-
-  console.log('=== OPENAI REQUEST ===');
-  console.log('SYSTEM PROMPT:', systemPrompt);
-  console.log('\nUSER PROMPT:', userPrompt);
-  console.log('\nSCHEMA:', JSON.stringify(scenariosSchema, null, 2));
-  console.log('\nREASONING EFFORT: low');
-  console.log('MAX TOKENS:', 4000);
+  console.log('═══════════════════════════════════════');
+  console.log('🚀 STREAMING REQUEST (array mode)');
+  console.log('═══════════════════════════════════════');
+  console.log('Count:', count);
+  console.log('Model:', OPENAI_MODEL);
+  console.log('Current Age:', parentNode.ageYears, 'years', parentNode.ageWeeks, 'weeks');
+  console.log('\n--- SYSTEM PROMPT ---');
+  console.log(systemPrompt);
+  console.log('\n--- USER PROMPT ---');
+  console.log(userPrompt);
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -181,6 +133,9 @@ Make sure one scenario is completely wild and unexpected!
       },
       body: JSON.stringify({
         model: OPENAI_MODEL,
+        stream: true,
+        temperature: 0.8,
+        max_tokens: 1000,
         messages: [
           { role: 'system', content: systemPrompt },
           { role: 'user', content: userPrompt }
@@ -188,61 +143,108 @@ Make sure one scenario is completely wild and unexpected!
         response_format: {
           type: 'json_schema',
           json_schema: {
-            name: 'LifeSimulationScenarios',
+            name: 'LifeScenarios',
             strict: true,
             schema: scenariosSchema
           }
-        },
-        reasoning_effort: "low",
-        max_completion_tokens: 4000
+        }
       })
     });
 
     if (!response.ok) {
-      const errorData = await response.json().catch(() => ({ error: { message: response.statusText } }));
-      const errorMessage = errorData.error?.message || response.statusText || 'Unknown error';
-      throw new Error(`OpenAI API error: ${errorMessage}`);
+      throw new Error(`OpenAI API error: ${response.statusText}`);
     }
 
-    const data = await response.json();
-    
-    console.log('=== OPENAI RESPONSE ===');
-    console.log('Finish reason:', data.choices?.[0]?.finish_reason);
-    console.log('Tokens used - Prompt:', data.usage?.prompt_tokens, 'Completion:', data.usage?.completion_tokens);
-    console.log('Reasoning tokens:', data.usage?.completion_tokens_details?.reasoning_tokens);
-    
-    const content = data.choices[0]?.message?.content;
-
-    if (!content) {
-      const finishReason = data.choices?.[0]?.finish_reason;
-      const reasoningTokens = data.usage?.completion_tokens_details?.reasoning_tokens || 0;
-      throw new Error(`No content in OpenAI response. Finish reason: ${finishReason}, reasoning tokens used: ${reasoningTokens}`);
+    if (!response.body) {
+      throw new Error('No response body');
     }
 
-    console.log('Content length:', content.length, 'characters');
-    console.log('Content preview:', content.substring(0, 200));
-    
-    const parsed = JSON.parse(content) as { scenarios: GeneratedNodeData[] };
-    
-    console.log('Parsed scenarios count:', parsed.scenarios?.length);
-    console.log('Full parsed result:', JSON.stringify(parsed, null, 2));
+    const reader = response.body.getReader();
+    const decoder = new TextDecoder();
+    let buffer = '';
+    let jsonBuffer = '';
 
-    // Validate all scenarios
-    if (!parsed.scenarios || parsed.scenarios.length !== count) {
-      throw new Error(`Expected exactly ${count} scenarios`);
-    }
+    while (true) {
+      const { done, value } = await reader.read();
 
-    for (const scenario of parsed.scenarios) {
-      if (!validateGeneratedNode(scenario)) {
-        throw new Error('Generated scenario failed validation');
+      if (done) break;
+
+      buffer += decoder.decode(value, { stream: true });
+
+      // Process complete lines
+      const lines = buffer.split('\n');
+      buffer = lines.pop() || '';
+
+      for (const line of lines) {
+        const trimmed = line.trim();
+        if (!trimmed || trimmed === 'data: [DONE]') continue;
+
+        if (trimmed.startsWith('data: ')) {
+          try {
+            const jsonStr = trimmed.slice(6);
+            const parsed = JSON.parse(jsonStr);
+            const content = parsed.choices?.[0]?.delta?.content;
+
+            if (content) {
+              // Log streaming content for debugging
+              console.log('📦', content);
+              jsonBuffer += content;
+            }
+          } catch (err) {
+            // Skip invalid lines
+          }
+        }
       }
     }
 
-    return parsed.scenarios;
+    // Parse the complete accumulated JSON
+    console.log('\n🔍 Parsing complete response...');
+    const parsed = JSON.parse(jsonBuffer) as { scenarios: GeneratedNodeData[] };
+
+    console.log('✅ Received', parsed.scenarios.length, 'scenarios');
+    console.log('\n--- GENERATED SCENARIOS ---');
+
+    // Validate and call onNode for each
+    if (!parsed.scenarios || parsed.scenarios.length !== count) {
+      throw new Error(`Expected ${count} scenarios, got ${parsed.scenarios?.length || 0}`);
+    }
+
+    for (let i = 0; i < parsed.scenarios.length; i++) {
+      const scenario = parsed.scenarios[i];
+
+      // Check age continuity
+      const totalWeeksParent = parentNode.ageYears * 52 + parentNode.ageWeeks;
+      const totalWeeksScenario = scenario.ageYears * 52 + scenario.ageWeeks;
+
+      if (totalWeeksScenario < totalWeeksParent) {
+        console.warn(`⚠️  Scenario ${i + 1} goes backwards in time! Parent: ${parentNode.ageYears}y ${parentNode.ageWeeks}w, Scenario: ${scenario.ageYears}y ${scenario.ageWeeks}w`);
+        // Fix: set to at least parent's age + 1 week
+        scenario.ageYears = parentNode.ageYears;
+        scenario.ageWeeks = parentNode.ageWeeks + 1;
+        if (scenario.ageWeeks > 51) {
+          scenario.ageYears += 1;
+          scenario.ageWeeks = 0;
+        }
+        console.log(`   ✓ Fixed to: ${scenario.ageYears}y ${scenario.ageWeeks}w`);
+      }
+
+      if (validateGeneratedNode(scenario)) {
+        console.log(`✅ ${i + 1}: "${scenario.title}" (Age: ${scenario.ageYears}y ${scenario.ageWeeks}w)`);
+        console.log(`   ${scenario.change}`);
+        onNode(scenario);
+      } else {
+        throw new Error(`Scenario ${i + 1} failed validation`);
+      }
+    }
+    console.log('═══════════════════════════════════════\n');
+
   } catch (error) {
-    console.error('Error generating scenarios with OpenAI:', error);
+    console.error('❌ Generation error:', error);
     // Fallback to mock data
-    return generateMockScenarios(parentNode, count);
+    const mockData = generateMockScenarios(parentNode, count);
+    for (const node of mockData) {
+      onNode(node);
+    }
   }
 }
 
@@ -268,7 +270,7 @@ function validateGeneratedNode(data: unknown): data is GeneratedNodeData {
 }
 
 /**
- * Generate mock scenarios (fallback when API key is not set)
+ * Generate mock scenarios (fallback)
  */
 function generateMockScenarios(parentNode: Node, count: number): GeneratedNodeData[] {
   const mockTemplates = [
@@ -292,20 +294,6 @@ function generateMockScenarios(parentNode: Node, count: number): GeneratedNodeDa
       ageDelta: 0.25,
       incomeDelta: 200,
       locationChange: 'New City'
-    },
-    {
-      title: 'Further Education',
-      change: 'Started taking evening classes',
-      ageDelta: 0.5,
-      incomeDelta: -200,
-      careerChange: 'Student & ' + parentNode.careerSituation
-    },
-    {
-      title: 'Housing Upgrade',
-      change: 'Moved to a better apartment',
-      ageDelta: 0.25,
-      incomeDelta: -300,
-      livingChange: 'Upgraded apartment'
     }
   ];
 

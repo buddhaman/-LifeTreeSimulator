@@ -2,7 +2,7 @@ import { useEffect, useRef, useState } from 'react';
 import { Camera2D } from './Camera2D';
 import { graph, initializeGraph, updatePhysics, addNode, createNode, isLeafNode, Node, physicsConfig } from './graph';
 import { render, getExpandButtonBounds } from './renderer';
-import { generateChildScenarios } from './openai';
+import { generateChildScenariosStreaming } from './openai';
 import './App.css';
 
 function App() {
@@ -250,7 +250,7 @@ function App() {
     }
   }, [hoveredNodeId, hoveredButtonNodeId, draggedNodeId]);
 
-  // Expand node - generate children
+  // Expand node - generate children with streaming
   const expandNode = async (nodeId: number) => {
     const node = graph.nodes.find(n => n.id === nodeId);
     if (!node || node.expanded) return;
@@ -258,7 +258,7 @@ function App() {
     // Mark as expanded
     node.expanded = true;
 
-    // Create 3 placeholder nodes immediately and start request
+    // Create 3 placeholder nodes immediately
     const placeholderNodes: Node[] = [];
     for (let i = 0; i < 3; i++) {
       const childId = graph.nodes.length;
@@ -279,15 +279,12 @@ function App() {
       placeholderNodes.push(child);
     }
 
-
     try {
-      // Generate scenarios using OpenAI (request starts immediately)
-      const scenarios = await generateChildScenarios(node, 3);
-
-      // Update placeholder nodes with actual data and stop growing state
-      scenarios.forEach((scenario, index) => {
-        if (index < placeholderNodes.length) {
-          const child = placeholderNodes[index];
+      // Stream scenarios from OpenAI - updates happen as they arrive
+      let nodeIndex = 0;
+      await generateChildScenariosStreaming(node, 3, (scenario) => {
+        if (nodeIndex < placeholderNodes.length) {
+          const child = placeholderNodes[nodeIndex];
           child.title = scenario.title;
           child.change = scenario.change;
           child.ageYears = scenario.ageYears;
@@ -297,8 +294,9 @@ function App() {
           child.livingSituation = scenario.livingSituation;
           child.careerSituation = scenario.careerSituation;
           child.monthlyIncome = scenario.monthlyIncome;
-          // Set isGrowing to false now that request is complete
+          // Set isGrowing to false for this node
           child.isGrowing = false;
+          nodeIndex++;
         }
       });
 
