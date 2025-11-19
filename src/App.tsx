@@ -3,12 +3,14 @@ import { Camera2D } from './Camera2D';
 import { graph, initializeGraph, updatePhysics, addNode, createNode, isLeafNode, Node, physicsConfig } from './graph';
 import { render, getExpandButtonBounds } from './renderer';
 import { generateChildScenariosStreaming } from './openai';
+import { Skeleton } from './Skeleton';
 import './App.css';
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cameraRef = useRef<Camera2D | null>(null);
   const animationRef = useRef<number | null>(null);
+  const skeletonRef = useRef<Skeleton | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<number | null>(null);
   const [hoveredButtonNodeId, setHoveredButtonNodeId] = useState<number | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<number | null>(null);
@@ -52,6 +54,13 @@ function App() {
     // Set initial selected node to root
     setSelectedNodeId(0);
 
+    // Initialize skeleton at root node position (world coordinates)
+    const rootNode = graph.nodes[0];
+    if (rootNode) {
+      skeletonRef.current = new Skeleton(rootNode.x, rootNode.y);
+      skeletonRef.current.setNode(rootNode);
+    }
+
     // Add wheel listener directly to canvas (not through React) to allow preventDefault
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
@@ -81,6 +90,11 @@ function App() {
       // Update physics simulation
       updatePhysics();
 
+      // Update skeleton
+      if (skeletonRef.current) {
+        skeletonRef.current.update();
+      }
+
       // Update dragged node position every frame
       if (draggedNodeId !== null) {
         const node = graph.nodes.find(n => n.id === draggedNodeId);
@@ -94,6 +108,12 @@ function App() {
 
       // Render
       render(ctx, camera, graph, hoveredNodeId, selectedNodeId, hoveredButtonNodeId);
+
+      // Render skeleton in world space (affected by camera)
+      if (skeletonRef.current) {
+        skeletonRef.current.render(ctx);
+      }
+
       animationRef.current = requestAnimationFrame(renderLoop);
     };
 
