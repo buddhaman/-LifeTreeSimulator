@@ -400,9 +400,9 @@ export function render(
     drawBubble(ctx, node, isHovered, isSelected);
   });
 
-  // Draw expand buttons on leaf nodes
+  // Draw expand buttons on leaf nodes (only if not growing)
   graph.nodes.forEach(node => {
-    if (isLeafNode(node.id) && !node.expanded) {
+    if (isLeafNode(node.id) && !node.expanded && !node.isGrowing) {
       const isButtonHovered = node.id === hoveredButtonNodeId;
       drawExpandButton(ctx, node, isButtonHovered);
     }

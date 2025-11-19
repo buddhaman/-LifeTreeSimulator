@@ -13,6 +13,18 @@ function App() {
   const [hoveredButtonNodeId, setHoveredButtonNodeId] = useState<number | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<number | null>(null);
   const [draggedNodeId, setDraggedNodeId] = useState<number | null>(null);
+  const [editingNodeId, setEditingNodeId] = useState<number | null>(null);
+  const [editForm, setEditForm] = useState({
+    title: '',
+    change: '',
+    ageYears: 0,
+    ageWeeks: 0,
+    location: '',
+    relationshipStatus: '',
+    livingSituation: '',
+    careerSituation: '',
+    monthlyIncome: 0
+  });
   const isDraggingCanvasRef = useRef(false);
   const mouseWorldPosRef = useRef({ x: 0, y: 0 });
   const dragOffsetRef = useRef({ x: 0, y: 0 });
@@ -117,7 +129,7 @@ function App() {
   const hitTestExpandButton = (worldX: number, worldY: number): Node | null => {
     for (let i = graph.nodes.length - 1; i >= 0; i--) {
       const node = graph.nodes[i];
-      if (isLeafNode(node.id) && !node.expanded) {
+      if (isLeafNode(node.id) && !node.expanded && !node.isGrowing) {
         const bounds = getExpandButtonBounds(node);
         const dx = worldX - bounds.centerX;
         const dy = worldY - bounds.centerY;
@@ -308,6 +320,50 @@ function App() {
     }
   };
 
+  // Handle edit button click
+  const handleEditClick = (nodeId: number) => {
+    const node = graph.nodes.find(n => n.id === nodeId);
+    if (!node) return;
+
+    setEditForm({
+      title: node.title,
+      change: node.change,
+      ageYears: node.ageYears,
+      ageWeeks: node.ageWeeks,
+      location: node.location,
+      relationshipStatus: node.relationshipStatus,
+      livingSituation: node.livingSituation,
+      careerSituation: node.careerSituation,
+      monthlyIncome: node.monthlyIncome
+    });
+    setEditingNodeId(nodeId);
+  };
+
+  // Handle save from modal
+  const handleSaveEdit = () => {
+    if (editingNodeId === null) return;
+
+    const node = graph.nodes.find(n => n.id === editingNodeId);
+    if (!node) return;
+
+    node.title = editForm.title;
+    node.change = editForm.change;
+    node.ageYears = editForm.ageYears;
+    node.ageWeeks = editForm.ageWeeks;
+    node.location = editForm.location;
+    node.relationshipStatus = editForm.relationshipStatus;
+    node.livingSituation = editForm.livingSituation;
+    node.careerSituation = editForm.careerSituation;
+    node.monthlyIncome = editForm.monthlyIncome;
+
+    setEditingNodeId(null);
+  };
+
+  // Handle cancel from modal
+  const handleCancelEdit = () => {
+    setEditingNodeId(null);
+  };
+
   return (
     <div className="app">
       <canvas
@@ -322,6 +378,7 @@ function App() {
         {selectedNodeId !== null && (() => {
           const selectedNode = graph.nodes.find(n => n.id === selectedNodeId);
           if (selectedNode) {
+            const isLeaf = isLeafNode(selectedNode.id);
             return (
               <div className="selected-node">
                 <h3>Current Scenario</h3>
@@ -354,12 +411,110 @@ function App() {
                       <span className="value">${selectedNode.monthlyIncome}/mo</span>
                     </div>
                   </div>
+                  {isLeaf && (
+                    <button className="edit-button" onClick={() => handleEditClick(selectedNode.id)}>
+                      Edit Scenario
+                    </button>
+                  )}
                 </div>
               </div>
             );
           }
         })()}
       </div>
+
+      {/* Edit Modal */}
+      {editingNodeId !== null && (
+        <div className="modal-overlay" onClick={handleCancelEdit}>
+          <div className="modal-content" onClick={(e) => e.stopPropagation()}>
+            <h2>Edit Scenario</h2>
+            <div className="modal-form">
+              <div className="form-group">
+                <label>Title</label>
+                <input
+                  type="text"
+                  value={editForm.title}
+                  onChange={(e) => setEditForm({ ...editForm, title: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>Description</label>
+                <textarea
+                  value={editForm.change}
+                  onChange={(e) => setEditForm({ ...editForm, change: e.target.value })}
+                  rows={3}
+                />
+              </div>
+              <div className="form-row">
+                <div className="form-group">
+                  <label>Age (Years)</label>
+                  <input
+                    type="number"
+                    value={editForm.ageYears}
+                    onChange={(e) => setEditForm({ ...editForm, ageYears: Number(e.target.value) })}
+                    min="0"
+                  />
+                </div>
+                <div className="form-group">
+                  <label>Age (Weeks)</label>
+                  <input
+                    type="number"
+                    value={editForm.ageWeeks}
+                    onChange={(e) => setEditForm({ ...editForm, ageWeeks: Number(e.target.value) })}
+                    min="0"
+                    max="51"
+                  />
+                </div>
+              </div>
+              <div className="form-group">
+                <label>Location</label>
+                <input
+                  type="text"
+                  value={editForm.location}
+                  onChange={(e) => setEditForm({ ...editForm, location: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>Relationship Status</label>
+                <input
+                  type="text"
+                  value={editForm.relationshipStatus}
+                  onChange={(e) => setEditForm({ ...editForm, relationshipStatus: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>Living Situation</label>
+                <input
+                  type="text"
+                  value={editForm.livingSituation}
+                  onChange={(e) => setEditForm({ ...editForm, livingSituation: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>Career Situation</label>
+                <input
+                  type="text"
+                  value={editForm.careerSituation}
+                  onChange={(e) => setEditForm({ ...editForm, careerSituation: e.target.value })}
+                />
+              </div>
+              <div className="form-group">
+                <label>Monthly Income ($)</label>
+                <input
+                  type="number"
+                  value={editForm.monthlyIncome}
+                  onChange={(e) => setEditForm({ ...editForm, monthlyIncome: Number(e.target.value) })}
+                  min="0"
+                />
+              </div>
+            </div>
+            <div className="modal-actions">
+              <button className="cancel-button" onClick={handleCancelEdit}>Cancel</button>
+              <button className="save-button" onClick={handleSaveEdit}>Save Changes</button>
+            </div>
+          </div>
+        </div>
+      )}
     </div>
   );
 }
