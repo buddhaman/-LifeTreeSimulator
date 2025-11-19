@@ -18,9 +18,6 @@ function App() {
   const dragOffsetRef = useRef({ x: 0, y: 0 });
   const mouseDownPosRef = useRef({ x: 0, y: 0 });
   const lastMouseRef = useRef({ x: 0, y: 0 });
-  const [nodeCount, setNodeCount] = useState(0);
-  const [showPhysics, setShowPhysics] = useState(false);
-  const [, forceUpdate] = useState(0);
 
   const DRAG_THRESHOLD = 5;
 
@@ -40,7 +37,6 @@ function App() {
     // Initialize camera and graph
     cameraRef.current = new Camera2D(canvas);
     initializeGraph();
-    setNodeCount(graph.nodes.length);
     // Set initial selected node to root
     setSelectedNodeId(0);
 
@@ -271,8 +267,6 @@ function App() {
       placeholderNodes.push(child);
     }
 
-    // Update node count to show new nodes
-    setNodeCount(graph.nodes.length);
 
     try {
       // Generate scenarios using OpenAI (request starts immediately)
@@ -311,14 +305,6 @@ function App() {
       });
       // Revert expanded state on error
       node.expanded = false;
-      setNodeCount(graph.nodes.length);
-    }
-  };
-
-  // Reset camera
-  const handleReset = () => {
-    if (cameraRef.current) {
-      cameraRef.current.reset();
     }
   };
 
@@ -332,132 +318,13 @@ function App() {
       />
       <div className="sidebar">
         <h1>Life Sim</h1>
-        <div className="controls">
-          <p>Nodes: {nodeCount}</p>
-          <p>Zoom: {cameraRef.current ? (cameraRef.current.zoom * 100).toFixed(0) : 100}%</p>
-          <button onClick={handleReset}>Reset View</button>
-        </div>
 
-        <div className="physics-controls">
-          <h3 onClick={() => setShowPhysics(!showPhysics)} style={{ cursor: 'pointer' }}>
-            Physics {showPhysics ? '▼' : '▶'}
-          </h3>
-          {showPhysics && (
-            <div className="physics-sliders">
-              <div className="slider-group">
-                <label>Repulsion Strength: {physicsConfig.repulsionStrength.toFixed(0)}</label>
-                <input
-                  type="range"
-                  min="0"
-                  max="100000"
-                  step="1000"
-                  value={physicsConfig.repulsionStrength}
-                  onChange={(e) => {
-                    physicsConfig.repulsionStrength = Number(e.target.value);
-                    forceUpdate(v => v + 1);
-                  }}
-                />
-              </div>
-              
-              <div className="slider-group">
-                <label>Repulsion Range: {physicsConfig.repulsionRange.toFixed(0)}</label>
-                <input
-                  type="range"
-                  min="100"
-                  max="1000"
-                  step="10"
-                  value={physicsConfig.repulsionRange}
-                  onChange={(e) => {
-                    physicsConfig.repulsionRange = Number(e.target.value);
-                    forceUpdate(v => v + 1);
-                  }}
-                />
-              </div>
-              
-              <div className="slider-group">
-                <label>Spring Strength: {physicsConfig.springStrength.toFixed(3)}</label>
-                <input
-                  type="range"
-                  min="0"
-                  max="0.1"
-                  step="0.001"
-                  value={physicsConfig.springStrength}
-                  onChange={(e) => {
-                    physicsConfig.springStrength = Number(e.target.value);
-                    forceUpdate(v => v + 1);
-                  }}
-                />
-              </div>
-              
-              <div className="slider-group">
-                <label>Spring Length: {physicsConfig.springLength.toFixed(0)}</label>
-                <input
-                  type="range"
-                  min="100"
-                  max="600"
-                  step="10"
-                  value={physicsConfig.springLength}
-                  onChange={(e) => {
-                    physicsConfig.springLength = Number(e.target.value);
-                    forceUpdate(v => v + 1);
-                  }}
-                />
-              </div>
-              
-              <div className="slider-group">
-                <label>Friction: {physicsConfig.friction.toFixed(2)}</label>
-                <input
-                  type="range"
-                  min="0.5"
-                  max="0.99"
-                  step="0.01"
-                  value={physicsConfig.friction}
-                  onChange={(e) => {
-                    physicsConfig.friction = Number(e.target.value);
-                    forceUpdate(v => v + 1);
-                  }}
-                />
-              </div>
-              
-              <div className="slider-group">
-                <label>Gravity Strength: {physicsConfig.gravityStrength.toFixed(2)}</label>
-                <input
-                  type="range"
-                  min="0"
-                  max="1"
-                  step="0.01"
-                  value={physicsConfig.gravityStrength}
-                  onChange={(e) => {
-                    physicsConfig.gravityStrength = Number(e.target.value);
-                    forceUpdate(v => v + 1);
-                  }}
-                />
-              </div>
-              
-              <div className="slider-group">
-                <label>Max Velocity: {physicsConfig.maxVelocity.toFixed(0)}</label>
-                <input
-                  type="range"
-                  min="5"
-                  max="50"
-                  step="1"
-                  value={physicsConfig.maxVelocity}
-                  onChange={(e) => {
-                    physicsConfig.maxVelocity = Number(e.target.value);
-                    forceUpdate(v => v + 1);
-                  }}
-                />
-              </div>
-            </div>
-          )}
-        </div>
-        
         {selectedNodeId !== null && (() => {
           const selectedNode = graph.nodes.find(n => n.id === selectedNodeId);
           if (selectedNode) {
             return (
               <div className="selected-node">
-                <h3>Selected Scenario</h3>
+                <h3>Current Scenario</h3>
                 <div className="node-details">
                   <h4>{selectedNode.title}</h4>
                   <p className="description">{selectedNode.change}</p>
@@ -492,16 +359,6 @@ function App() {
             );
           }
         })()}
-
-        <div className="instructions">
-          <h3>Controls</h3>
-          <ul>
-            <li>Drag to pan</li>
-            <li>Scroll to zoom</li>
-            <li>Click node to select</li>
-            <li>Click + button to expand</li>
-          </ul>
-        </div>
       </div>
     </div>
   );

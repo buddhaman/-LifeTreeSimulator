@@ -1,76 +1,78 @@
 // OpenAI integration for generating life simulation nodes
 import { Node, findNode } from './graph';
 
-// Schema for structured output - array of 3 scenarios
-const scenariosSchema = {
-  type: "object",
-  properties: {
-    scenarios: {
-      type: "array",
-      items: {
-        type: "object",
-        properties: {
-          title: {
-            type: "string",
-            description: "Short label for the decision or event"
+// Schema generator for structured output - configurable number of scenarios
+function createScenariosSchema(count: number) {
+  return {
+    type: "object",
+    properties: {
+      scenarios: {
+        type: "array",
+        items: {
+          type: "object",
+          properties: {
+            title: {
+              type: "string",
+              description: "Short label for the decision or event"
+            },
+            change: {
+              type: "string",
+              description: "One sentence describing what changed"
+            },
+            ageYears: {
+              type: "integer",
+              minimum: 0,
+              description: "Whole years of age after the event"
+            },
+            ageWeeks: {
+              type: "integer",
+              minimum: 0,
+              maximum: 51,
+              description: "Weeks beyond the years (0-51)"
+            },
+            location: {
+              type: "string",
+              description: "New location after the event"
+            },
+            relationshipStatus: {
+              type: "string",
+              description: "Relationship status after the event"
+            },
+            livingSituation: {
+              type: "string",
+              description: "Living situation (e.g., renting, own house, shared flat) after the event"
+            },
+            careerSituation: {
+              type: "string",
+              description: "Career situation after the event (e.g., student, working professional, freelancer)"
+            },
+            monthlyIncome: {
+              type: "number",
+              minimum: 0,
+              description: "Net monthly income after the event"
+            }
           },
-          change: {
-            type: "string",
-            description: "One sentence describing what changed"
-          },
-          ageYears: {
-            type: "integer",
-            minimum: 0,
-            description: "Whole years of age after the event"
-          },
-          ageWeeks: {
-            type: "integer",
-            minimum: 0,
-            maximum: 51,
-            description: "Weeks beyond the years (0-51)"
-          },
-          location: {
-            type: "string",
-            description: "New location after the event"
-          },
-          relationshipStatus: {
-            type: "string",
-            description: "Relationship status after the event"
-          },
-          livingSituation: {
-            type: "string",
-            description: "Living situation (e.g., renting, own house, shared flat) after the event"
-          },
-          careerSituation: {
-            type: "string",
-            description: "Career situation after the event (e.g., student, working professional, freelancer)"
-          },
-          monthlyIncome: {
-            type: "number",
-            minimum: 0,
-            description: "Net monthly income after the event"
-          }
+          required: [
+            "title",
+            "change",
+            "ageYears",
+            "ageWeeks",
+            "location",
+            "relationshipStatus",
+            "livingSituation",
+            "careerSituation",
+            "monthlyIncome"
+          ],
+          additionalProperties: false
         },
-        required: [
-          "title",
-          "change",
-          "ageYears",
-          "ageWeeks",
-          "location",
-          "relationshipStatus",
-          "livingSituation",
-          "careerSituation",
-          "monthlyIncome"
-        ],
-        additionalProperties: false
-      },
-      minItems: 3,
-      maxItems: 3
-    }
-  },
-  required: ["scenarios"],
-  additionalProperties: false
-};
+        minItems: count,
+        maxItems: count
+      }
+    },
+    required: ["scenarios"],
+    additionalProperties: false
+  };
+}
 
 // Response from OpenAI matching the schema
 interface GeneratedNodeData {
@@ -133,18 +135,41 @@ export async function generateChildScenarios(
     }
   }).join('\n\n');
 
-  const systemPrompt = `You are a life simulation engine that generates realistic future scenarios.
-Given a person's life history, you generate exactly 3 diverse possible future scenarios.
-Each scenario should be a realistic life event or decision that could happen next.
-Keep changes realistic and incremental (small time jumps of weeks/months, gradual income changes).
-Make the scenarios meaningfully different from each other - explore different life paths.`;
+  const systemPrompt = `You are a life simulation engine that generates compelling future scenarios.
+Given a person's life history, you generate exactly ${count} diverse possible future scenarios.
+Each scenario should be a life event or decision that could happen next.
+
+CRITICAL: Make scenarios span DIFFERENT LIFE DOMAINS. Don't focus only on career. Balance across:
+- Relationships & family (romance, marriage, kids, breakups, reunions)
+- Personal growth & hobbies (new passions, creative pursuits, skills)
+- Health & lifestyle (fitness journeys, health challenges, wellness changes)
+- Social & community (new friendships, community involvement, social shifts)
+- Location & adventure (moving cities/countries, travel, exploration)
+- Career & finances (job changes, business ventures, windfalls)
+- Unexpected events (accidents, discoveries, chance encounters)
+
+IMPORTANT: One scenario MUST be totally unexpected and dramatic - a wild twist nobody would see coming.
+Examples: winning lottery, sudden inheritance, life-changing encounter, dramatic pivot, spontaneous adventure, shocking revelation.
+
+NOTE: When creating the wild scenario, DO NOT label it in the title (no "The wildcard:", "Wild:", "Unexpected:", etc).
+Just write a normal title that describes the event itself.`;
 
   const userPrompt = `LIFE HISTORY:
 
 ${lifeHistory}
 
-Based on this life journey, generate exactly 3 diverse possible next scenarios.
-Each should represent a different realistic direction this person's life could take from their current situation.`;
+Generate exactly ${count} diverse scenarios exploring DIFFERENT aspects of life (not just career).
+Spread across multiple life domains: relationships, personal growth, adventures, social life, health, unexpected events.
+Make sure one scenario is completely wild and unexpected!
+(Don't label the wild one as "wildcard" or "unexpected" in the title - just describe it normally)`;
+
+  const scenariosSchema = createScenariosSchema(count);
+
+  console.log('=== OPENAI REQUEST ===');
+  console.log('SYSTEM PROMPT:', systemPrompt);
+  console.log('\nUSER PROMPT:', userPrompt);
+  console.log('\nSCHEMA:', JSON.stringify(scenariosSchema, null, 2));
+  console.log('\nMAX TOKENS:', 128000);
 
   try {
     const response = await fetch('https://api.openai.com/v1/chat/completions', {
@@ -167,8 +192,7 @@ Each should represent a different realistic direction this person's life could t
             schema: scenariosSchema
           }
         },
-        temperature: 0.9,
-        max_completion_tokens: 1500
+        max_completion_tokens: 128000
       })
     });
 
@@ -179,17 +203,31 @@ Each should represent a different realistic direction this person's life could t
     }
 
     const data = await response.json();
+    
+    console.log('=== OPENAI RESPONSE ===');
+    console.log('Finish reason:', data.choices?.[0]?.finish_reason);
+    console.log('Tokens used - Prompt:', data.usage?.prompt_tokens, 'Completion:', data.usage?.completion_tokens);
+    console.log('Reasoning tokens:', data.usage?.completion_tokens_details?.reasoning_tokens);
+    
     const content = data.choices[0]?.message?.content;
 
     if (!content) {
-      throw new Error('No content in OpenAI response');
+      const finishReason = data.choices?.[0]?.finish_reason;
+      const reasoningTokens = data.usage?.completion_tokens_details?.reasoning_tokens || 0;
+      throw new Error(`No content in OpenAI response. Finish reason: ${finishReason}, reasoning tokens used: ${reasoningTokens}`);
     }
 
+    console.log('Content length:', content.length, 'characters');
+    console.log('Content preview:', content.substring(0, 200));
+    
     const parsed = JSON.parse(content) as { scenarios: GeneratedNodeData[] };
+    
+    console.log('Parsed scenarios count:', parsed.scenarios?.length);
+    console.log('Full parsed result:', JSON.stringify(parsed, null, 2));
 
     // Validate all scenarios
-    if (!parsed.scenarios || parsed.scenarios.length !== 3) {
-      throw new Error('Expected exactly 3 scenarios');
+    if (!parsed.scenarios || parsed.scenarios.length !== count) {
+      throw new Error(`Expected exactly ${count} scenarios`);
     }
 
     for (const scenario of parsed.scenarios) {
