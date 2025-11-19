@@ -116,22 +116,22 @@ export interface PhysicsConfig {
 }
 
 export const physicsConfig: PhysicsConfig = {
-  repulsionStrength: 40000,
+  repulsionStrength: 30000,
   repulsionRange: 400,
   springStrength: 0.01,
   springLength: 300,
   friction: 0.85,
-  gravityStrength: 0.2, // 20x spring strength = 0.2
+  gravityStrength: 0.15,
   maxVelocity: 20,
 };
 
-const MIN_DISTANCE = 10; // Minimum distance for repulsion calculation
+const MIN_DISTANCE = 10;
 
 // Physics simulation - update node positions based on forces
 export function updatePhysics(): void {
   if (graph.nodes.length === 0) return;
 
-  const dt = 1; // timestep
+  const dt = 1;
 
   // 1. Repulsion between all nodes (prevent overlap)
   for (let i = 0; i < graph.nodes.length; i++) {
@@ -142,16 +142,14 @@ export function updatePhysics(): void {
       const dx = nodeB.x - nodeA.x;
       const dy = nodeB.y - nodeA.y;
       const distance = Math.sqrt(dx * dx + dy * dy);
-      
-      // Skip if too close or too far
+
       if (distance < MIN_DISTANCE || distance > physicsConfig.repulsionRange) continue;
 
-      // Coulomb-like repulsion (inverse square)
+      // Simple repulsion force
       const force = physicsConfig.repulsionStrength / (distance * distance);
       const fx = (dx / distance) * force * dt;
-      const fy = (dy / distance) * force * dt * 0.1; // Reduce vertical repulsion to 10%
+      const fy = (dy / distance) * force * dt;
 
-      // Apply impulse directly to velocities
       nodeA.vx -= fx;
       nodeA.vy -= fy;
       nodeB.vx += fx;
@@ -184,22 +182,21 @@ export function updatePhysics(): void {
     child.vy -= fy;
   });
 
-  // 3. Apply conditional upward gravity (only when below parent)
+  // 3. Conditional upward gravity (only when too close to parent)
+  const UPWARD_MARGIN = 200;
+
   graph.nodes.forEach((node) => {
-    // Skip root node (no parent)
     if (node.parentId === null) return;
-    
+
     const parent = findNode(node.parentId);
     if (!parent) return;
-    
-    // Check if node is below parent (higher y value = lower in screen space)
+
     const yDiff = node.y - parent.y;
-    
-    // Apply gravity as soon as node goes below parent
-    if (yDiff > 0) {
-      // Apply upward impulse proportional to how far below it is
-      const gravityImpulse = physicsConfig.gravityStrength * yDiff * dt;
-      node.vy -= gravityImpulse; // Negative y is upward
+
+    // Apply upward force when within margin
+    if (yDiff > -UPWARD_MARGIN) {
+      const strength = (yDiff + UPWARD_MARGIN) * physicsConfig.gravityStrength;
+      node.vy -= strength * dt;
     }
   });
 
