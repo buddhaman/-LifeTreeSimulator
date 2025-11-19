@@ -102,8 +102,8 @@ function App() {
   const hitTest = (worldX: number, worldY: number): Node | null => {
     for (let i = graph.nodes.length - 1; i >= 0; i--) {
       const node = graph.nodes[i];
-      const halfW = node.width / 2;
-      const halfH = node.height / 2;
+      const halfW = node.currentWidth / 2;
+      const halfH = node.currentHeight / 2;
 
       if (
         worldX >= node.x - halfW &&

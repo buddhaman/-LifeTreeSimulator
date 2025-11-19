@@ -8,16 +8,22 @@ export interface Node {
   parentId: number | null;
   x: number;
   y: number;
-  vx: number; // velocity x
-  vy: number; // velocity y
-  width: number;
-  height: number;
+  vx: number;
+  vy: number;
+  targetWidth: number;
+  targetHeight: number;
+  currentWidth: number;
+  currentHeight: number;
   expanded: boolean;
+  isGrowing: boolean;
+  growthProgress: number; // 0 to 1
 }
 
 export interface Edge {
   fromId: number;
   toId: number;
+  currentLength: number; // Current visual length (for animation)
+  targetLength: number; // Target length (spring length)
 }
 
 export interface Graph {
@@ -49,12 +55,14 @@ export function createNode(
   if (parentId !== null) {
     const parent = findNode(parentId);
     if (parent) {
-      // Start near parent with small random offset
+      // Start at final spring length distance from parent
       initialX = parent.x + (Math.random() - 0.5) * 100;
-      initialY = parent.y - 200 + (Math.random() - 0.5) * 50;
+      initialY = parent.y - physicsConfig.springLength; // Start at spring length distance
     }
   }
   
+  const isNew = parentId !== null;
+
   return {
     id,
     title,
@@ -66,9 +74,13 @@ export function createNode(
     y: initialY,
     vx: 0,
     vy: 0,
-    width: 250,
-    height: 150,
+    targetWidth: 250,
+    targetHeight: 150,
+    currentWidth: isNew ? 0 : 250,
+    currentHeight: isNew ? 0 : 150,
     expanded: false,
+    isGrowing: isNew,
+    growthProgress: isNew ? 0 : 1,
   };
 }
 
@@ -77,6 +89,8 @@ export function createEdge(fromId: number, toId: number): Edge {
   return {
     fromId,
     toId,
+    currentLength: 0, // Start at 0 for animation
+    targetLength: physicsConfig.springLength,
   };
 }
 
@@ -126,12 +140,41 @@ export const physicsConfig: PhysicsConfig = {
 };
 
 const MIN_DISTANCE = 10;
+const GROWTH_DURATION = 3.0; // 3 seconds
+
+let lastUpdateTime = Date.now();
 
 // Physics simulation - update node positions based on forces
 export function updatePhysics(): void {
   if (graph.nodes.length === 0) return;
 
+  const now = Date.now();
+  const deltaTime = (now - lastUpdateTime) / 1000; // Convert to seconds
+  lastUpdateTime = now;
+
   const dt = 1;
+
+  // Update growing nodes
+  graph.nodes.forEach(node => {
+    if (node.isGrowing) {
+      node.growthProgress += deltaTime / GROWTH_DURATION;
+      if (node.growthProgress >= 1) {
+        node.growthProgress = 1;
+        node.isGrowing = false;
+      }
+      // Update size
+      node.currentWidth = node.targetWidth * node.growthProgress;
+      node.currentHeight = node.targetHeight * node.growthProgress;
+    }
+  });
+
+  // Update growing edges
+  graph.edges.forEach(edge => {
+    if (edge.currentLength < edge.targetLength) {
+      const growthRate = (edge.targetLength / GROWTH_DURATION) * deltaTime;
+      edge.currentLength = Math.min(edge.currentLength + growthRate, edge.targetLength);
+    }
+  });
 
   // 1. Repulsion between all nodes (prevent overlap)
   for (let i = 0; i < graph.nodes.length; i++) {
@@ -161,17 +204,17 @@ export function updatePhysics(): void {
   graph.edges.forEach(edge => {
     const parent = findNode(edge.fromId);
     const child = findNode(edge.toId);
-    
+
     if (!parent || !child) return;
 
     const dx = child.x - parent.x;
     const dy = child.y - parent.y;
     const distance = Math.sqrt(dx * dx + dy * dy);
-    
+
     if (distance < MIN_DISTANCE) return;
 
-    // Hooke's law: F = k * (distance - restLength)
-    const force = physicsConfig.springStrength * (distance - physicsConfig.springLength);
+    // Hooke's law using current edge length (for animation)
+    const force = physicsConfig.springStrength * (distance - edge.currentLength);
     const fx = (dx / distance) * force * dt;
     const fy = (dy / distance) * force * dt;
 

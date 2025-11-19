@@ -56,22 +56,35 @@ export function drawBubble(
   isHovered: boolean = false,
   isSelected: boolean = false
 ): void {
-  const x = node.x - node.width / 2;
-  const y = node.y - node.height / 2;
-  const radius = 16; // Larger radius for smoother corners
+  // Use current dimensions directly
+  const currentWidth = node.currentWidth;
+  const currentHeight = node.currentHeight;
+
+  const x = node.x - currentWidth / 2;
+  const y = node.y - currentHeight / 2;
+  const radius = 16;
 
   ctx.save();
 
-  // Apple-style shadow (softer, more diffused)
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.12)';
-  ctx.shadowBlur = isHovered ? 30 : 20;
-  ctx.shadowOffsetX = 0;
-  ctx.shadowOffsetY = isHovered ? 8 : 4;
+  // Green glow for growing nodes
+  if (node.isGrowing) {
+    const glowIntensity = 0.6 + Math.sin(Date.now() / 200) * 0.4; // Pulsing effect
+    ctx.shadowColor = `rgba(52, 211, 153, ${glowIntensity})`;
+    ctx.shadowBlur = 40;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+  } else {
+    // Normal shadow
+    ctx.shadowColor = 'rgba(0, 0, 0, 0.12)';
+    ctx.shadowBlur = isHovered ? 30 : 20;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = isHovered ? 8 : 4;
+  }
 
   // White/gray card background
   const bgGray = isHovered ? 252 : 255;
   ctx.fillStyle = `rgb(${bgGray}, ${bgGray}, ${bgGray})`;
-  drawRoundedRect(ctx, x, y, node.width, node.height, radius);
+  drawRoundedRect(ctx, x, y, currentWidth, currentHeight, radius);
   ctx.fill();
 
   ctx.restore();
@@ -79,67 +92,72 @@ export function drawBubble(
 
   // Subtle border
   if (isSelected) {
-    // Apple blue accent for selection
     ctx.strokeStyle = 'rgba(0, 122, 255, 0.8)';
     ctx.lineWidth = 2.5;
-    drawRoundedRect(ctx, x, y, node.width, node.height, radius);
+    drawRoundedRect(ctx, x, y, currentWidth, currentHeight, radius);
+    ctx.stroke();
+  } else if (node.isGrowing) {
+    // Green border for growing nodes
+    ctx.strokeStyle = 'rgba(52, 211, 153, 0.6)';
+    ctx.lineWidth = 2;
+    drawRoundedRect(ctx, x, y, currentWidth, currentHeight, radius);
     ctx.stroke();
   } else {
-    // Very subtle gray border
     ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)';
     ctx.lineWidth = 1;
-    drawRoundedRect(ctx, x, y, node.width, node.height, radius);
+    drawRoundedRect(ctx, x, y, currentWidth, currentHeight, radius);
     ctx.stroke();
   }
 
   ctx.restore();
 
-  // Text - dark gray for good contrast on white
-  ctx.textAlign = 'left';
-  ctx.textBaseline = 'top';
+  // Only draw text if node is fully grown
+  if (node.growthProgress >= 1) {
+    // Text
+    ctx.textAlign = 'left';
+    ctx.textBaseline = 'top';
 
-  // Title - SF Pro-like font (using system font stack)
-  ctx.font = '600 17px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
-  ctx.fillStyle = '#1d1d1f'; // Apple's dark text color
-  const titleLines = wrapText(ctx, node.title, node.width - 32);
-  titleLines.slice(0, 2).forEach((line, i) => {
-    ctx.fillText(line, x + 16, y + 16 + i * 22);
-  });
+    // Title
+    ctx.font = '600 17px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
+    ctx.fillStyle = '#1d1d1f';
+    const titleLines = wrapText(ctx, node.title, currentWidth - 32);
+    titleLines.slice(0, 2).forEach((line, i) => {
+      ctx.fillText(line, x + 16, y + 16 + i * 22);
+    });
 
-  // Description - lighter gray
-  ctx.font = '400 14px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
-  ctx.fillStyle = '#6e6e73'; // Apple's secondary text color
-  const descLines = wrapText(ctx, node.description, node.width - 32);
-  descLines.slice(0, 3).forEach((line, i) => {
-    ctx.fillText(line, x + 16, y + 60 + i * 20);
-  });
+    // Description
+    ctx.font = '400 14px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
+    ctx.fillStyle = '#6e6e73';
+    const descLines = wrapText(ctx, node.description, currentWidth - 32);
+    descLines.slice(0, 3).forEach((line, i) => {
+      ctx.fillText(line, x + 16, y + 60 + i * 20);
+    });
 
-  // Probability badge (Apple-style pill)
-  const probText = `${node.probability}%`;
-  ctx.font = '600 12px -apple-system, BlinkMacSystemFont, sans-serif';
-  const probMetrics = ctx.measureText(probText);
-  const pillWidth = probMetrics.width + 16;
-  const pillHeight = 22;
-  const pillX = x + 16;
-  const pillY = y + node.height - pillHeight - 12;
+    // Probability badge
+    const probText = `${node.probability}%`;
+    ctx.font = '600 12px -apple-system, BlinkMacSystemFont, sans-serif';
+    const probMetrics = ctx.measureText(probText);
+    const pillWidth = probMetrics.width + 16;
+    const pillHeight = 22;
+    const pillX = x + 16;
+    const pillY = y + currentHeight - pillHeight - 12;
 
-  // Pill background (light gray)
-  ctx.fillStyle = '#f5f5f7';
-  ctx.beginPath();
-  ctx.roundRect(pillX, pillY, pillWidth, pillHeight, 11);
-  ctx.fill();
+    ctx.fillStyle = '#f5f5f7';
+    ctx.beginPath();
+    ctx.roundRect(pillX, pillY, pillWidth, pillHeight, 11);
+    ctx.fill();
 
-  // Pill text
-  ctx.fillStyle = '#1d1d1f';
-  ctx.fillText(probText, pillX + 8, pillY + 5);
+    ctx.fillStyle = '#1d1d1f';
+    ctx.fillText(probText, pillX + 8, pillY + 5);
 
-  // Tags (if space allows)
-  if (node.tags.length > 0) {
-    const tagsX = pillX + pillWidth + 8;
-    ctx.font = '400 11px -apple-system, BlinkMacSystemFont, sans-serif';
-    ctx.fillStyle = '#86868b'; // Very light gray for tags
-    const tagText = node.tags.slice(0, 2).join(' · ');
-    ctx.fillText(tagText, tagsX, pillY + 6);
+    // Tags
+    if (node.tags.length > 0) {
+      const tagsX = pillX + pillWidth + 8;
+      ctx.font = '400 11px -apple-system, BlinkMacSystemFont, sans-serif';
+      ctx.fillStyle = '#86868b';
+      const tagText = node.tags.slice(0, 2).join(' · ');
+      ctx.fillText(tagText, tagsX, pillY + 6);
+    }
   }
 }
 
@@ -150,7 +168,7 @@ export function drawExpandButton(
   isHovered: boolean = false
 ): void {
   const buttonSize = 28;
-  const buttonY = node.y - node.height / 2 - buttonSize - 12; // Above the node
+  const buttonY = node.y - node.currentHeight / 2 - buttonSize - 12; // Above the node
   const centerX = node.x;
   const centerY = buttonY + buttonSize / 2;
 
@@ -198,11 +216,11 @@ export function getExpandButtonBounds(node: Node) {
   const buttonSize = 28;
   return {
     x: node.x - buttonSize / 2,
-    y: node.y - node.height / 2 - buttonSize - 12,
+    y: node.y - node.currentHeight / 2 - buttonSize - 12,
     width: buttonSize,
     height: buttonSize,
     centerX: node.x,
-    centerY: node.y - node.height / 2 - buttonSize / 2 - 12,
+    centerY: node.y - node.currentHeight / 2 - buttonSize / 2 - 12,
     radius: buttonSize / 2
   };
 }
@@ -210,9 +228,9 @@ export function getExpandButtonBounds(node: Node) {
 // Draw an edge (bezier curve) - from parent to child with tapered thickness
 export function drawEdge(ctx: CanvasRenderingContext2D, fromNode: Node, toNode: Node): void {
   const fromX = fromNode.x;
-  const fromY = fromNode.y - fromNode.height / 2; // Top of parent
+  const fromY = fromNode.y - fromNode.currentHeight / 2; // Top of parent
   const toX = toNode.x;
-  const toY = toNode.y + toNode.height / 2; // Bottom of child
+  const toY = toNode.y + toNode.currentHeight / 2; // Bottom of child
 
   const controlOffset = Math.abs(toY - fromY) * 0.5;
 
