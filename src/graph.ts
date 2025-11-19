@@ -60,9 +60,9 @@ export function createNode(
   if (parentId !== null) {
     const parent = findNode(parentId);
     if (parent) {
-      // Start at final spring length distance from parent
+      // Start close to parent with small offset
       initialX = parent.x + (Math.random() - 0.5) * 100;
-      initialY = parent.y - physicsConfig.springLength; // Start at spring length distance
+      initialY = parent.y - 150; // Start close to parent, will grow away
     }
   }
 

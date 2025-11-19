@@ -234,36 +234,80 @@ export function drawEdge(ctx: CanvasRenderingContext2D, fromNode: Node, toNode: 
 
   const controlOffset = Math.abs(toY - fromY) * 0.5;
 
-  // Create gradient for tapered effect (thick at parent, thin at child)
-  const gradient = ctx.createLinearGradient(fromX, fromY, toX, toY);
-  gradient.addColorStop(0, 'rgba(0, 0, 0, 0.18)'); // Slightly darker at parent
-  gradient.addColorStop(1, 'rgba(0, 0, 0, 0.08)'); // Lighter at child
+  const startWidth = 8; // Thick at parent
+  const endWidth = 2;   // Thin at child
+  const segments = 20;
 
   ctx.save();
 
-  // Draw multiple bezier curves with decreasing width for taper effect
-  for (let i = 0; i < 3; i++) {
-    const t = i / 3;
-    const width = 3.5 - (t * 2); // From 3.5px to 1.5px
-    const alpha = 0.15 - (t * 0.05); // Fade slightly
-
-    ctx.strokeStyle = `rgba(0, 0, 0, ${alpha})`;
-    ctx.lineWidth = width;
-    ctx.lineCap = 'round';
-    ctx.lineJoin = 'round';
-
-    ctx.beginPath();
-    ctx.moveTo(fromX, fromY);
-    ctx.bezierCurveTo(
-      fromX,
-      fromY - controlOffset,
-      toX,
-      toY + controlOffset,
-      toX,
-      toY
-    );
-    ctx.stroke();
+  // Green glow for growing edges
+  if (toNode.isGrowing) {
+    const glowIntensity = 0.6 + Math.sin(Date.now() / 200) * 0.4; // Pulsing effect
+    ctx.shadowColor = `rgba(52, 211, 153, ${glowIntensity})`;
+    ctx.shadowBlur = 20;
+    ctx.fillStyle = `rgba(52, 211, 153, ${0.3 + glowIntensity * 0.2})`;
+  } else {
+    ctx.fillStyle = 'rgba(0, 0, 0, 0.12)';
   }
+
+  // Draw tapered path by creating a polygon along the bezier curve
+  const points: { x: number; y: number; width: number }[] = [];
+
+  for (let i = 0; i <= segments; i++) {
+    const t = i / segments;
+
+    // Bezier curve calculation
+    const x = (1 - t) * (1 - t) * (1 - t) * fromX +
+              3 * (1 - t) * (1 - t) * t * fromX +
+              3 * (1 - t) * t * t * toX +
+              t * t * t * toX;
+
+    const y = (1 - t) * (1 - t) * (1 - t) * fromY +
+              3 * (1 - t) * (1 - t) * t * (fromY - controlOffset) +
+              3 * (1 - t) * t * t * (toY + controlOffset) +
+              t * t * t * toY;
+
+    // Linear width interpolation (thick to thin)
+    const width = startWidth * (1 - t) + endWidth * t;
+
+    points.push({ x, y, width });
+  }
+
+  // Create outline path for tapered shape
+  ctx.beginPath();
+
+  // Right side
+  for (let i = 0; i < points.length; i++) {
+    const p = points[i];
+    const angle = i < points.length - 1
+      ? Math.atan2(points[i + 1].y - p.y, points[i + 1].x - p.x)
+      : Math.atan2(p.y - points[i - 1].y, p.x - points[i - 1].x);
+
+    const offsetX = Math.cos(angle + Math.PI / 2) * p.width / 2;
+    const offsetY = Math.sin(angle + Math.PI / 2) * p.width / 2;
+
+    if (i === 0) {
+      ctx.moveTo(p.x + offsetX, p.y + offsetY);
+    } else {
+      ctx.lineTo(p.x + offsetX, p.y + offsetY);
+    }
+  }
+
+  // Left side (reverse)
+  for (let i = points.length - 1; i >= 0; i--) {
+    const p = points[i];
+    const angle = i < points.length - 1
+      ? Math.atan2(points[i + 1].y - p.y, points[i + 1].x - p.x)
+      : Math.atan2(p.y - points[i - 1].y, p.x - points[i - 1].x);
+
+    const offsetX = Math.cos(angle - Math.PI / 2) * p.width / 2;
+    const offsetY = Math.sin(angle - Math.PI / 2) * p.width / 2;
+
+    ctx.lineTo(p.x + offsetX, p.y + offsetY);
+  }
+
+  ctx.closePath();
+  ctx.fill();
 
   ctx.restore();
 }
