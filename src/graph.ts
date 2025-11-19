@@ -39,6 +39,11 @@ export const graph: Graph = {
   initialized: false,
 };
 
+// Get growth factor for physics - 0 to 1
+export function getGrowthFactor(node: Node): number {
+  return node.growthProgress;
+}
+
 // Node structure
 export function createNode(
   id: number,
@@ -51,7 +56,7 @@ export function createNode(
   // Initialize near parent if it exists
   let initialX = 0;
   let initialY = 0;
-  
+
   if (parentId !== null) {
     const parent = findNode(parentId);
     if (parent) {
@@ -60,7 +65,7 @@ export function createNode(
       initialY = parent.y - physicsConfig.springLength; // Start at spring length distance
     }
   }
-  
+
   const isNew = parentId !== null;
 
   return {
@@ -188,8 +193,12 @@ export function updatePhysics(): void {
 
       if (distance < MIN_DISTANCE || distance > physicsConfig.repulsionRange) continue;
 
-      // Simple repulsion force
-      const force = physicsConfig.repulsionStrength / (distance * distance);
+      // Simple repulsion force multiplied by growth factors
+      const growthFactorA = getGrowthFactor(nodeA);
+      const growthFactorB = getGrowthFactor(nodeB);
+      const combinedGrowth = growthFactorA * growthFactorB;
+
+      const force = physicsConfig.repulsionStrength / (distance * distance) * combinedGrowth;
       const fx = (dx / distance) * force * dt;
       const fy = (dy / distance) * force * dt;
 
@@ -213,8 +222,9 @@ export function updatePhysics(): void {
 
     if (distance < MIN_DISTANCE) return;
 
-    // Hooke's law using current edge length (for animation)
-    const force = physicsConfig.springStrength * (distance - edge.currentLength);
+    // Hooke's law using current edge length (grows during animation)
+    const growthFactor = getGrowthFactor(child);
+    const force = physicsConfig.springStrength * (distance - edge.currentLength) * growthFactor;
     const fx = (dx / distance) * force * dt;
     const fy = (dy / distance) * force * dt;
 
@@ -236,9 +246,10 @@ export function updatePhysics(): void {
 
     const yDiff = node.y - parent.y;
 
-    // Apply upward force when within margin
+    // Apply upward force when within margin, multiplied by growth factor
     if (yDiff > -UPWARD_MARGIN) {
-      const strength = (yDiff + UPWARD_MARGIN) * physicsConfig.gravityStrength;
+      const growthFactor = getGrowthFactor(node);
+      const strength = (yDiff + UPWARD_MARGIN) * physicsConfig.gravityStrength * growthFactor;
       node.vy -= strength * dt;
     }
   });
