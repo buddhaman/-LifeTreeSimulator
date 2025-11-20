@@ -1,5 +1,5 @@
 // Canvas rendering functions
-import { isLeafNode, Node, Graph } from './graph';
+import { isLeafNode, Node, Graph, getPathToNode } from './graph';
 import { Camera2D } from './Camera2D';
 
 // Draw a rounded rectangle
@@ -54,7 +54,8 @@ export function drawBubble(
   ctx: CanvasRenderingContext2D,
   node: Node,
   isHovered: boolean = false,
-  isSelected: boolean = false
+  isSelected: boolean = false,
+  isOnCharacterPath: boolean = false
 ): void {
   // Use current dimensions directly
   const currentWidth = node.currentWidth;
@@ -66,8 +67,16 @@ export function drawBubble(
 
   ctx.save();
 
-  // Comic book shadow effect
-  if (node.isGrowing) {
+  // Comic book shadow effect with character path support
+  if (isOnCharacterPath) {
+    // Terracotta glow for character path (the main storyline)
+    const glowIntensity = 0.7 + Math.sin(Date.now() / 300) * 0.3; // Pulsing effect
+    ctx.shadowColor = `rgba(184, 119, 94, ${glowIntensity})`; // Terracotta
+    ctx.shadowBlur = 35;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+  } else if (node.isGrowing) {
+    // Sage green glow for growing nodes
     const glowIntensity = 0.6 + Math.sin(Date.now() / 200) * 0.4; // Pulsing effect
     ctx.shadowColor = `rgba(138, 154, 135, ${glowIntensity})`;
     ctx.shadowBlur = 30;
@@ -90,9 +99,16 @@ export function drawBubble(
   ctx.restore();
   ctx.save();
 
-  // Hand-drawn style border
-  if (isSelected) {
-    ctx.strokeStyle = '#8A9A87'; // Sage green for selected (the chosen path)
+  // Hand-drawn style border with character path support
+  if (isOnCharacterPath) {
+    // Terracotta border for character path (the main storyline)
+    ctx.strokeStyle = '#B8775E'; // Terracotta
+    ctx.lineWidth = 3.5;
+    drawRoundedRect(ctx, x, y, currentWidth, currentHeight, radius);
+    ctx.stroke();
+  } else if (isSelected) {
+    // Sage green for selected (the chosen path)
+    ctx.strokeStyle = '#8A9A87';
     ctx.lineWidth = 3;
     drawRoundedRect(ctx, x, y, currentWidth, currentHeight, radius);
     ctx.stroke();
@@ -270,8 +286,8 @@ export function getExpandButtonBounds(node: Node) {
   };
 }
 
-// Draw an edge (bezier curve) - Comic book style connector
-export function drawEdge(ctx: CanvasRenderingContext2D, fromNode: Node, toNode: Node): void {
+// Draw an edge (bezier curve) - Comic book style connector with character path support
+export function drawEdge(ctx: CanvasRenderingContext2D, fromNode: Node, toNode: Node, isOnCharacterPath: boolean = false): void {
   const fromX = fromNode.x;
   const fromY = fromNode.y - fromNode.currentHeight / 2; // Top of parent
   const toX = toNode.x;
@@ -279,14 +295,22 @@ export function drawEdge(ctx: CanvasRenderingContext2D, fromNode: Node, toNode: 
 
   const controlOffset = Math.abs(toY - fromY) * 0.5;
 
-  const startWidth = 6; // Slightly thinner at parent
-  const endWidth = 2;   // Thin at child
+  // Character path gets thicker lines
+  const startWidth = isOnCharacterPath ? 10 : 6; // Thicker at parent for character path
+  const endWidth = isOnCharacterPath ? 3 : 2;   // Thicker at child for character path
   const segments = 20;
 
   ctx.save();
 
-  // Sage green glow for growing edges
-  if (toNode.isGrowing) {
+  // Comic book edge styling with character path support
+  if (isOnCharacterPath) {
+    // Terracotta glow for character path (the main storyline)
+    const glowIntensity = 0.7 + Math.sin(Date.now() / 300) * 0.3; // Pulsing effect
+    ctx.shadowColor = `rgba(184, 119, 94, ${glowIntensity})`; // Terracotta
+    ctx.shadowBlur = 20;
+    ctx.fillStyle = `rgba(184, 119, 94, ${0.8 + glowIntensity * 0.2})`;
+  } else if (toNode.isGrowing) {
+    // Sage green glow for growing edges
     const glowIntensity = 0.6 + Math.sin(Date.now() / 200) * 0.4; // Pulsing effect
     ctx.shadowColor = `rgba(138, 154, 135, ${glowIntensity})`;
     ctx.shadowBlur = 15;
@@ -397,7 +421,8 @@ export function render(
   graph: Graph,
   hoveredNodeId: number | null,
   selectedNodeId: number | null,
-  hoveredButtonNodeId: number | null
+  hoveredButtonNodeId: number | null,
+  characterNodeId: number | null
 ): void {
   const { width, height } = ctx.canvas;
 
@@ -412,12 +437,18 @@ export function render(
   // Draw grid first (behind everything)
   drawGrid(ctx, camera);
 
+  // Get character path for gold highlighting
+  const characterPath = characterNodeId !== null ? getPathToNode(characterNodeId) : [];
+  const characterPathSet = new Set(characterPath);
+
   // Draw edges
   graph.edges.forEach(edge => {
     const fromNode = graph.nodes.find(n => n.id === edge.fromId);
     const toNode = graph.nodes.find(n => n.id === edge.toId);
     if (fromNode && toNode) {
-      drawEdge(ctx, fromNode, toNode);
+      // Check if this edge is on the character path
+      const isOnCharacterPath = characterPathSet.has(edge.fromId) && characterPathSet.has(edge.toId);
+      drawEdge(ctx, fromNode, toNode, isOnCharacterPath);
     }
   });
 
@@ -425,7 +456,8 @@ export function render(
   graph.nodes.forEach(node => {
     const isHovered = node.id === hoveredNodeId;
     const isSelected = node.id === selectedNodeId;
-    drawBubble(ctx, node, isHovered, isSelected);
+    const isOnCharacterPath = characterPathSet.has(node.id);
+    drawBubble(ctx, node, isHovered, isSelected, isOnCharacterPath);
   });
 
   // Draw expand buttons on leaf nodes (only if not growing)

@@ -3,13 +3,16 @@ import { Camera2D } from './Camera2D';
 import { graph, initializeGraph, updatePhysics, addNode, createNode, isLeafNode, Node } from './graph';
 import { render, getExpandButtonBounds } from './renderer';
 import { generateChildScenariosStreaming } from './openai';
+import { Skeleton } from './Skeleton';
 import { generateLifeImage } from './gemini';
+import greenptLogo from './assets/logo-greenpt.png';
 import './App.css';
 
 function App() {
   const canvasRef = useRef<HTMLCanvasElement>(null);
   const cameraRef = useRef<Camera2D | null>(null);
   const animationRef = useRef<number | null>(null);
+  const skeletonRef = useRef<Skeleton | null>(null);
   const [hoveredNodeId, setHoveredNodeId] = useState<number | null>(null);
   const [hoveredButtonNodeId, setHoveredButtonNodeId] = useState<number | null>(null);
   const [selectedNodeId, setSelectedNodeId] = useState<number | null>(null);
@@ -36,9 +39,15 @@ function App() {
     glasses: '',
     build: ''
   });
-  const isDraggingCanvasRef = useRef(false);
+  // Drag state types
+  type DragStateIdle = { type: 'idle' };
+  type DragStateNode = { type: 'node'; nodeId: number };
+  type DragStateCharacter = { type: 'character'; offsetX: number; offsetY: number };
+  type DragStateCanvas = { type: 'canvas' };
+  type DragState = DragStateIdle | DragStateNode | DragStateCharacter | DragStateCanvas;
+
+  const dragStateRef = useRef<DragState>({ type: 'idle' });
   const mouseWorldPosRef = useRef({ x: 0, y: 0 });
-  const dragOffsetRef = useRef({ x: 0, y: 0 });
   const mouseDownPosRef = useRef({ x: 0, y: 0 });
   const lastMouseRef = useRef({ x: 0, y: 0 });
 
@@ -101,6 +110,13 @@ function App() {
     // Set initial selected node to root
     setSelectedNodeId(0);
 
+    // Initialize skeleton at root node position (world coordinates)
+    const rootNode = graph.nodes[0];
+    if (rootNode) {
+      skeletonRef.current = new Skeleton(rootNode.x, rootNode.y);
+      skeletonRef.current.setNode(rootNode);
+    }
+
     // Add wheel listener directly to canvas (not through React) to allow preventDefault
     const handleWheel = (e: WheelEvent) => {
       e.preventDefault();
@@ -130,19 +146,55 @@ function App() {
       // Update physics simulation
       updatePhysics();
 
+      // Update skeleton
+      if (skeletonRef.current) {
+        const isDragging = dragStateRef.current.type === 'character';
+
+        // Update character left hand position when dragging (before physics update)
+        if (isDragging) {
+          // Detach from node completely
+          skeletonRef.current.currentNode = null;
+
+          // Get left hand particle (index 15 in particles array)
+          const leftHand = skeletonRef.current.particles[15];
+          if (leftHand) {
+            // Pin left hand directly to mouse position (no offset)
+            // Account for z-projection: screenY = worldY - z, so worldY = screenY + z
+            const targetZ = 50;
+            leftHand.x = mouseWorldPosRef.current.x;
+            leftHand.y = mouseWorldPosRef.current.y + targetZ;
+            leftHand.z = targetZ;
+            leftHand.oldX = leftHand.x;
+            leftHand.oldY = leftHand.y;
+            leftHand.oldZ = leftHand.z;
+          }
+        }
+
+        skeletonRef.current.update(1, isDragging);
+      }
+
       // Update dragged node position every frame
-      if (draggedNodeId !== null) {
-        const node = graph.nodes.find(n => n.id === draggedNodeId);
+      if (dragStateRef.current.type === 'node') {
+        const node = graph.nodes.find(n => n.id === dragStateRef.current.nodeId);
         if (node) {
-          node.x = mouseWorldPosRef.current.x + dragOffsetRef.current.x;
-          node.y = mouseWorldPosRef.current.y + dragOffsetRef.current.y;
+          node.x = mouseWorldPosRef.current.x;
+          node.y = mouseWorldPosRef.current.y;
           node.vx = 0;
           node.vy = 0;
         }
       }
 
+      // Get character node ID for gold path rendering
+      const characterNodeId = skeletonRef.current?.currentNode?.id ?? null;
+
       // Render
-      render(ctx, camera, graph, hoveredNodeId, selectedNodeId, hoveredButtonNodeId);
+      render(ctx, camera, graph, hoveredNodeId, selectedNodeId, hoveredButtonNodeId, characterNodeId);
+
+      // Render skeleton in world space (affected by camera)
+      if (skeletonRef.current) {
+        skeletonRef.current.render(ctx);
+      }
+
       animationRef.current = requestAnimationFrame(renderLoop);
     };
 
@@ -192,23 +244,37 @@ function App() {
     return null;
   };
 
+  // Hit test for skeleton character (check head area)
+  const hitTestCharacter = (worldX: number, worldY: number): boolean => {
+    const skeleton = skeletonRef.current;
+    if (!skeleton || !skeleton.head) return false;
+
+    const headScreenY = skeleton.head.y - skeleton.head.z;
+    const dx = worldX - skeleton.head.x;
+    const dy = worldY - headScreenY;
+    const distance = Math.sqrt(dx * dx + dy * dy);
+
+    // Hit test a larger area around the head (radius ~40 for easier grabbing)
+    return distance <= 50;
+  };
+
   // Mouse move handler
   const handleMouseMove = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const camera = cameraRef.current;
+    const skeleton = skeletonRef.current;
     if (!camera) return;
 
     const worldPos = camera.screenToWorld(e.clientX, e.clientY);
     mouseWorldPosRef.current = worldPos;
 
-    // Dragging canvas
-    if (isDraggingCanvasRef.current) {
+    if (dragStateRef.current.type === 'canvas') {
+      // Dragging canvas
       const dx = e.clientX - lastMouseRef.current.x;
       const dy = e.clientY - lastMouseRef.current.y;
       camera.pan(-dx, -dy);
       lastMouseRef.current = { x: e.clientX, y: e.clientY };
-    }
-    // Not dragging - update hover
-    else if (!draggedNodeId) {
+    } else if (dragStateRef.current.type === 'idle') {
+      // Update hover states
       const buttonNode = hitTestExpandButton(worldPos.x, worldPos.y);
       if (buttonNode) {
         setHoveredButtonNodeId(buttonNode.id);
@@ -224,6 +290,7 @@ function App() {
   // Mouse down handler
   const handleMouseDown = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const camera = cameraRef.current;
+    const skeleton = skeletonRef.current;
     if (!camera) return;
 
     mouseDownPosRef.current = { x: e.clientX, y: e.clientY };
@@ -232,23 +299,36 @@ function App() {
     const worldPos = camera.screenToWorld(e.clientX, e.clientY);
     mouseWorldPosRef.current = worldPos;
 
-    // Check if clicking on a node
-    const node = hitTest(worldPos.x, worldPos.y);
-    if (node) {
-      // Start dragging node immediately
-      setDraggedNodeId(node.id);
-      dragOffsetRef.current = {
-        x: node.x - worldPos.x,
-        y: node.y - worldPos.y
+    // Priority: Character > Node > Canvas
+    const hitChar = hitTestCharacter(worldPos.x, worldPos.y);
+
+    if (hitChar && skeleton) {
+      // Grab character - detach from node
+      skeleton.currentNode = null;
+      const headScreenY = skeleton.head.y - skeleton.head.z;
+      dragStateRef.current = {
+        type: 'character',
+        offsetX: skeleton.head.x - worldPos.x,
+        offsetY: headScreenY - worldPos.y
       };
       if (canvasRef.current) {
         canvasRef.current.style.cursor = 'grabbing';
       }
     } else {
-      // Start dragging canvas
-      isDraggingCanvasRef.current = true;
-      if (canvasRef.current) {
-        canvasRef.current.style.cursor = 'grabbing';
+      const node = hitTest(worldPos.x, worldPos.y);
+      if (node) {
+        // Grab node
+        setDraggedNodeId(node.id);
+        dragStateRef.current = { type: 'node', nodeId: node.id };
+        if (canvasRef.current) {
+          canvasRef.current.style.cursor = 'grabbing';
+        }
+      } else {
+        // Grab canvas
+        dragStateRef.current = { type: 'canvas' };
+        if (canvasRef.current) {
+          canvasRef.current.style.cursor = 'grabbing';
+        }
       }
     }
   };
@@ -256,6 +336,7 @@ function App() {
   // Mouse up handler
   const handleMouseUp = (e: React.MouseEvent<HTMLCanvasElement>) => {
     const camera = cameraRef.current;
+    const skeleton = skeletonRef.current;
     if (!camera) return;
 
     const dx = e.clientX - mouseDownPosRef.current.x;
@@ -264,7 +345,7 @@ function App() {
     const wasClick = distance < DRAG_THRESHOLD;
 
     // Handle click (not drag)
-    if (wasClick) {
+    if (wasClick && dragStateRef.current.type !== 'character') {
       const worldPos = camera.screenToWorld(e.clientX, e.clientY);
 
       // Check for button click first
@@ -284,9 +365,33 @@ function App() {
       }
     }
 
+    // If we were dragging the character, snap to nearest node
+    if (dragStateRef.current.type === 'character' && skeleton) {
+      const headScreenY = skeleton.head.y - skeleton.head.z;
+
+      // Find nearest node
+      let nearestNode = null;
+      let minDistance = Infinity;
+
+      for (const node of graph.nodes) {
+        const dx = node.x - skeleton.head.x;
+        const dy = node.y - headScreenY;
+        const dist = Math.sqrt(dx * dx + dy * dy);
+
+        if (dist < minDistance) {
+          minDistance = dist;
+          nearestNode = node;
+        }
+      }
+
+      if (nearestNode) {
+        skeleton.setNode(nearestNode);
+      }
+    }
+
     // Reset drag states
     setDraggedNodeId(null);
-    isDraggingCanvasRef.current = false;
+    dragStateRef.current = { type: 'idle' };
 
     // Update cursor based on hover
     const hasHover = hoveredNodeId !== null || hoveredButtonNodeId !== null;
@@ -297,11 +402,11 @@ function App() {
 
   // Update cursor based on hover state
   useEffect(() => {
-    if (canvasRef.current && !draggedNodeId && !isDraggingCanvasRef.current) {
+    if (canvasRef.current && dragStateRef.current.type === 'idle') {
       const hasHover = hoveredNodeId !== null || hoveredButtonNodeId !== null;
       canvasRef.current.style.cursor = hasHover ? 'pointer' : 'grab';
     }
-  }, [hoveredNodeId, hoveredButtonNodeId, draggedNodeId]);
+  }, [hoveredNodeId, hoveredButtonNodeId]);
 
   // Expand node - generate children with streaming
   const expandNode = async (nodeId: number) => {
@@ -480,17 +585,20 @@ function App() {
 
   // Generate life book
   const generateLifeBook = async () => {
-    if (selectedNodeId === null) {
-      console.warn('📖 [LIFEBOOK] No node selected');
+    // Get skeleton's current node
+    const characterNodeId = skeletonRef.current?.currentNode?.id;
+
+    if (characterNodeId === undefined || characterNodeId === null) {
+      console.warn('📖 [LIFEBOOK] Character not on any node');
       return;
     }
 
-    console.log('📖 [LIFEBOOK] Starting life book generation for node:', selectedNodeId);
+    console.log('📖 [LIFEBOOK] Starting life book generation for character node:', characterNodeId);
     setIsGeneratingLifeBook(true);
 
     try {
-      // Get path from root to selected node
-      const path = getPathToNode(selectedNodeId);
+      // Get path from root to character's current node
+      const path = getPathToNode(characterNodeId);
       console.log('📖 [LIFEBOOK] Path contains', path.length, 'nodes');
 
       // Generate images for nodes that don't have them
@@ -756,29 +864,34 @@ function App() {
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
       />
+
+      {/* Powered by GreenPT Logo */}
+      <div className="powered-by-logo">
+        <span className="powered-by-text">Powered by</span>
+        <img src={greenptLogo} alt="GreenPT" className="greenpt-logo" />
+      </div>
+
       <div className="sidebar">
-        <h1>Life Sim</h1>
+        <h1>LifeTree AI</h1>
 
         {/* Generate Life Book Button */}
-        {selectedNodeId !== null && (
-          <button
-            className="generate-lifebook-button"
-            onClick={generateLifeBook}
-            disabled={isGeneratingLifeBook}
-          >
-            {isGeneratingLifeBook ? (
-              <>
-                <span className="lifebook-spinner"></span>
-                Generating Life Book...
-              </>
-            ) : (
-              <>
-                <span className="lifebook-icon">📖</span>
-                Generate Life Book
-              </>
-            )}
-          </button>
-        )}
+        <button
+          className="generate-lifebook-button"
+          onClick={generateLifeBook}
+          disabled={isGeneratingLifeBook}
+        >
+          {isGeneratingLifeBook ? (
+            <>
+              <span className="lifebook-spinner"></span>
+              Generating Life Book...
+            </>
+          ) : (
+            <>
+              <span className="lifebook-icon">📖</span>
+              Generate Life Book
+            </>
+          )}
+        </button>
 
         {/* Image Display Section */}
         {selectedNodeId !== null && (

@@ -85,9 +85,9 @@ export function createNode(
   if (parentId !== null) {
     const parent = findNode(parentId);
     if (parent) {
-      // Start close to parent with small offset
-      initialX = parent.x + (Math.random() - 0.5) * 100;
-      initialY = parent.y - 150; // Start close to parent, will grow away
+      // Start close to parent with small random offset to prevent exact overlap
+      initialX = parent.x + (Math.random() - 0.5) * 120; // Modest horizontal spread
+      initialY = parent.y - 150 + (Math.random() - 0.5) * 60; // Small vertical variance
     }
   }
 
@@ -159,6 +159,20 @@ export function getChildren(nodeId: number): Node[] {
 // Check if a node is a leaf node (has no children)
 export function isLeafNode(nodeId: number): boolean {
   return getChildren(nodeId).length === 0;
+}
+
+// Get path from root to a specific node
+export function getPathToNode(nodeId: number): number[] {
+  const path: number[] = [];
+  let currentId: number | null = nodeId;
+
+  while (currentId !== null) {
+    path.unshift(currentId);
+    const node = findNode(currentId);
+    currentId = node?.parentId ?? null;
+  }
+
+  return path;
 }
 
 // Physics configuration - exported so UI can modify
@@ -331,21 +345,15 @@ export function initializeGraph(): void {
   // Root node - starting point (only node at initialization)
   const root = createNode(
     0,
-    'Your Life Today',
-    'Fresh graduate ready to start your career journey',
-    22, // 22 years old
-    0,  // 0 weeks
-    'Boston, MA',
-    'Single',
-    'Living with roommates',
-    'Recent CS Graduate',
-    0, // $0/month - just graduated
-    'Dark brown', // Hair color
-    'Short and neat', // Hair style
-    'Brown', // Eye color
-    'Clean shaven', // Facial hair
-    'Black-framed glasses', // Glasses
-    'Average build' // Build/body type
+    'Current Situation',
+    'Tim Trussner is continuing his life with steady momentum, balancing work, creativity, and personal evolution. Building high-performance simulations for defense, Schiphol, and ProRail.',
+    28, // 28 years old
+    36, // 36 weeks
+    'Netherlands',
+    'Married to Olga Mitrofanova from Russia',
+    'Living together with two cats in a stable home',
+    'High-performance simulation engineer building ambitious tools and starting a new company',
+    4200 // $4200/month
   );
   addNode(root);
 

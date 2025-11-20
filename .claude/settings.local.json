@@ -8,7 +8,10 @@
       "Bash(git pull:*)",
       "Bash(git branch:*)",
       "WebFetch(domain:ai.google.dev)",
-      "WebSearch"
+      "WebSearch",
+      "Bash(dir:*)",
+      "Bash(if not exist public mkdir public)",
+      "Bash(move logo-greenpt.png publiclogo-greenpt.png)"
     ],
     "deny": [],
     "ask": []
