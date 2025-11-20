@@ -457,32 +457,12 @@ export function drawEdge(ctx: CanvasRenderingContext2D, fromNode: Node, toNode: 
   ctx.restore();
 }
 
-// Draw enhanced paper background with texture and effects
+// Draw simple paper background (optimized for performance)
 function drawPaperBackground(ctx: CanvasRenderingContext2D, width: number, height: number): void {
   ctx.save();
-
-  // Base paper color
+  // Simple base paper color - no expensive pixel manipulation
   ctx.fillStyle = '#F8F5F2';
   ctx.fillRect(0, 0, width, height);
-
-  // Paper noise/grain texture
-  const imageData = ctx.getImageData(0, 0, width, height);
-  const data = imageData.data;
-  for (let i = 0; i < data.length; i += 4) {
-    const noise = (Math.random() - 0.5) * 8;
-    data[i] += noise;     // R
-    data[i + 1] += noise; // G
-    data[i + 2] += noise; // B
-  }
-  ctx.putImageData(imageData, 0, 0);
-
-  // Vignette effect (darker edges)
-  const gradient = ctx.createRadialGradient(width / 2, height / 2, 0, width / 2, height / 2, Math.max(width, height) * 0.7);
-  gradient.addColorStop(0, 'rgba(125, 107, 92, 0)');
-  gradient.addColorStop(1, 'rgba(125, 107, 92, 0.12)');
-  ctx.fillStyle = gradient;
-  ctx.fillRect(0, 0, width, height);
-
   ctx.restore();
 }
 
@@ -608,7 +588,6 @@ export function render(
 
   // Draw notebook-style background elements
   drawRuledLines(ctx, camera);
-  drawMarginLine(ctx, camera);
   drawGrid(ctx, camera);
 
   // Get character path for gold highlighting
