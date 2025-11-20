@@ -216,7 +216,7 @@ export class Skeleton {
       }
     }
 
-    // Keep feet pinned on top of current node
+    // Keep feet pinned on top of current node (only if we have a node)
     if (this.currentNode) {
       const footSpacing = 20; // Distance between feet
       const nodeTopY = this.currentNode.y - this.currentNode.currentHeight / 2;
