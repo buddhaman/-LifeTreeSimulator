@@ -1,0 +1,541 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>LifeTree AI - Subscription Plans</title>
+
+  <!-- Comic Book Style Fonts -->
+  <link rel="preconnect" href="https://fonts.googleapis.com">
+  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+  <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Architects+Daughter&family=Merriweather:wght@400;700&family=Lora:wght@400;600&display=swap" rel="stylesheet">
+
+  <style>
+    * {
+      margin: 0;
+      padding: 0;
+      box-sizing: border-box;
+    }
+
+    body {
+      font-family: 'Lora', 'Merriweather', serif;
+      background: #F8F5F2;
+      padding: 60px 40px;
+      min-height: 100vh;
+      position: relative;
+    }
+
+    /* Paper texture overlay */
+    body::before {
+      content: '';
+      position: fixed;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      pointer-events: none;
+      z-index: 0;
+      opacity: 0.08;
+      background-image:
+        repeating-linear-gradient(
+          0deg,
+          transparent,
+          transparent 2px,
+          rgba(125, 107, 92, 0.03) 2px,
+          rgba(125, 107, 92, 0.03) 4px
+        ),
+        repeating-linear-gradient(
+          90deg,
+          transparent,
+          transparent 2px,
+          rgba(125, 107, 92, 0.03) 2px,
+          rgba(125, 107, 92, 0.03) 4px
+        );
+      background-size: 50px 50px;
+    }
+
+    .container {
+      max-width: 1400px;
+      margin: 0 auto;
+      position: relative;
+      z-index: 1;
+    }
+
+    /* Header */
+    .header {
+      text-align: center;
+      margin-bottom: 60px;
+    }
+
+    .header-decoration {
+      height: 80px;
+      background-image:
+        repeating-linear-gradient(90deg, #333 0px, #333 40px, transparent 40px, transparent 60px),
+        repeating-linear-gradient(0deg, #333 0px, #333 2px, transparent 2px, transparent 10px);
+      margin: 0 auto 30px;
+      width: 200px;
+      border: 2px solid #333;
+      box-shadow: 3px 3px 0 rgba(51, 51, 51, 0.2);
+    }
+
+    .main-title {
+      font-family: 'Patrick Hand', 'Architects Daughter', cursive;
+      font-size: 72px;
+      font-weight: 700;
+      color: #333333;
+      margin-bottom: 20px;
+      text-transform: uppercase;
+      letter-spacing: 2px;
+      text-shadow: 4px 4px 0 rgba(184, 119, 94, 0.3);
+    }
+
+    .subtitle {
+      font-family: 'Lora', serif;
+      font-size: 24px;
+      color: #7D6B5C;
+      font-style: italic;
+      margin-bottom: 16px;
+    }
+
+    .tagline {
+      font-family: 'Patrick Hand', cursive;
+      font-size: 18px;
+      color: #8A9A87;
+      font-weight: 600;
+    }
+
+    /* Pricing Cards Grid */
+    .pricing-grid {
+      display: grid;
+      grid-template-columns: repeat(3, 1fr);
+      gap: 40px;
+      margin-bottom: 60px;
+    }
+
+    /* Pricing Card */
+    .pricing-card {
+      background: #FFFEF8;
+      border: 4px solid #333333;
+      border-radius: 8px;
+      padding: 40px 32px;
+      box-shadow: 6px 6px 0 rgba(51, 51, 51, 0.2);
+      position: relative;
+      transition: transform 0.2s ease, box-shadow 0.2s ease;
+    }
+
+    .pricing-card:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 8px 8px 0 rgba(51, 51, 51, 0.3);
+    }
+
+    /* Comic panel corner marks */
+    .pricing-card::before,
+    .pricing-card::after {
+      content: '';
+      position: absolute;
+      width: 16px;
+      height: 16px;
+      border: 3px solid #333333;
+    }
+
+    .pricing-card::before {
+      top: -4px;
+      left: -4px;
+      border-right: none;
+      border-bottom: none;
+    }
+
+    .pricing-card::after {
+      bottom: -4px;
+      right: -4px;
+      border-left: none;
+      border-top: none;
+    }
+
+    /* Featured Card (Plus tier) */
+    .pricing-card.featured {
+      background: linear-gradient(135deg, #FFFEF8 0%, #FFF 100%);
+      border-width: 5px;
+      transform: scale(1.05);
+      box-shadow: 8px 8px 0 rgba(51, 51, 51, 0.3);
+    }
+
+    .pricing-card.featured:hover {
+      transform: scale(1.05) translate(-2px, -2px);
+      box-shadow: 10px 10px 0 rgba(51, 51, 51, 0.3);
+    }
+
+    .featured-badge {
+      position: absolute;
+      top: -16px;
+      right: 30px;
+      background: #B8775E;
+      color: #FFF;
+      padding: 8px 20px;
+      border: 3px solid #333333;
+      border-radius: 6px;
+      font-family: 'Patrick Hand', cursive;
+      font-size: 14px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      box-shadow: 3px 3px 0 rgba(51, 51, 51, 0.3);
+    }
+
+    /* Tier Header */
+    .tier-name {
+      font-family: 'Patrick Hand', cursive;
+      font-size: 32px;
+      font-weight: 700;
+      color: #333333;
+      text-transform: uppercase;
+      margin-bottom: 16px;
+      letter-spacing: 1px;
+    }
+
+    .tier-description {
+      font-size: 15px;
+      color: #7D6B5C;
+      line-height: 1.6;
+      margin-bottom: 24px;
+      min-height: 48px;
+    }
+
+    /* Price Display */
+    .price-container {
+      background: #F8F5F2;
+      border: 2px solid #333333;
+      border-radius: 6px;
+      padding: 20px;
+      margin-bottom: 28px;
+      text-align: center;
+      box-shadow: 3px 3px 0 rgba(51, 51, 51, 0.15);
+    }
+
+    .price {
+      font-family: 'Patrick Hand', cursive;
+      font-size: 56px;
+      font-weight: 700;
+      color: #333333;
+      line-height: 1;
+      margin-bottom: 8px;
+    }
+
+    .price-period {
+      font-family: 'Lora', serif;
+      font-size: 16px;
+      color: #7D6B5C;
+      font-style: italic;
+    }
+
+    /* Features List */
+    .features-list {
+      list-style: none;
+      margin-bottom: 32px;
+    }
+
+    .feature-item {
+      position: relative;
+      padding: 12px 0 12px 32px;
+      font-size: 15px;
+      color: #333333;
+      line-height: 1.5;
+      border-bottom: 1px dashed rgba(125, 107, 92, 0.2);
+    }
+
+    .feature-item:last-child {
+      border-bottom: none;
+    }
+
+    .feature-item::before {
+      content: '★';
+      position: absolute;
+      left: 4px;
+      color: #8A9A87;
+      font-weight: bold;
+      font-size: 18px;
+      top: 12px;
+    }
+
+    .feature-item.highlight {
+      font-weight: 600;
+      color: #B8775E;
+    }
+
+    .feature-item.highlight::before {
+      color: #B8775E;
+    }
+
+    .feature-value {
+      font-family: 'Patrick Hand', cursive;
+      font-weight: 700;
+      color: #8A9A87;
+    }
+
+    /* CTA Button */
+    .cta-button {
+      width: 100%;
+      padding: 18px 24px;
+      border: 3px solid #333333;
+      border-radius: 6px;
+      font-family: 'Patrick Hand', cursive;
+      font-size: 20px;
+      font-weight: 700;
+      text-transform: uppercase;
+      letter-spacing: 0.5px;
+      cursor: pointer;
+      transition: all 0.2s ease;
+      position: relative;
+      background: #8A9A87;
+      color: #FFF;
+      box-shadow: 4px 4px 0 rgba(51, 51, 51, 0.3);
+    }
+
+    .cta-button:hover {
+      transform: translate(-2px, -2px);
+      box-shadow: 6px 6px 0 rgba(51, 51, 51, 0.3);
+    }
+
+    .cta-button:active {
+      transform: translate(1px, 1px);
+      box-shadow: 2px 2px 0 rgba(51, 51, 51, 0.3);
+    }
+
+    .pricing-card.featured .cta-button {
+      background: #B8775E;
+    }
+
+    /* Halftone pattern for buttons */
+    .cta-button::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      width: 100%;
+      height: 100%;
+      background-image: radial-gradient(circle, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+      background-size: 8px 8px;
+      pointer-events: none;
+      opacity: 0.3;
+      border-radius: 3px;
+    }
+
+    /* Comparison Note */
+    .comparison-note {
+      text-align: center;
+      margin-top: 40px;
+      padding: 24px;
+      background: #FFF;
+      border: 3px solid #333333;
+      border-radius: 6px;
+      box-shadow: 4px 4px 0 rgba(51, 51, 51, 0.2);
+    }
+
+    .comparison-note p {
+      font-family: 'Lora', serif;
+      font-size: 16px;
+      color: #7D6B5C;
+      line-height: 1.6;
+    }
+
+    .comparison-note strong {
+      color: #333333;
+      font-weight: 700;
+    }
+
+    /* Free tier specific styling */
+    .pricing-card.free .tier-name {
+      color: #8A9A87;
+    }
+
+    /* Premium tier specific styling */
+    .pricing-card.premium .tier-name {
+      background: linear-gradient(135deg, #B8775E 0%, #8A9A87 100%);
+      -webkit-background-clip: text;
+      -webkit-text-fill-color: transparent;
+      background-clip: text;
+    }
+
+    .pricing-card.premium {
+      border-color: #B8775E;
+    }
+
+    @media (max-width: 1024px) {
+      .pricing-grid {
+        grid-template-columns: 1fr;
+        gap: 60px;
+      }
+
+      .pricing-card.featured {
+        transform: scale(1);
+      }
+
+      .pricing-card.featured:hover {
+        transform: translate(-2px, -2px);
+      }
+    }
+  </style>
+</head>
+<body>
+  <div class="container">
+    <!-- Header -->
+    <div class="header">
+      <div class="header-decoration"></div>
+      <h1 class="main-title">Choose Your Path</h1>
+      <p class="subtitle">Unlock the full potential of your life exploration</p>
+      <p class="tagline">From casual discovery to deep life planning</p>
+    </div>
+
+    <!-- Pricing Cards -->
+    <div class="pricing-grid">
+
+      <!-- FREE TIER -->
+      <div class="pricing-card free">
+        <h2 class="tier-name">Free</h2>
+        <p class="tier-description">Perfect for exploring possibilities and getting started with life scenario planning</p>
+
+        <div class="price-container">
+          <div class="price">$0</div>
+          <div class="price-period">forever</div>
+        </div>
+
+        <ul class="features-list">
+          <li class="feature-item">
+            <span class="feature-value">5</span> scenario generations per month
+          </li>
+          <li class="feature-item">
+            Basic life tree exploration
+          </li>
+          <li class="feature-item">
+            Standard node editing
+          </li>
+          <li class="feature-item">
+            <span class="feature-value">3</span> saved life paths
+          </li>
+          <li class="feature-item">
+            Community support
+          </li>
+          <li class="feature-item">
+            Export to PDF
+          </li>
+          <li class="feature-item">
+            Mobile access
+          </li>
+        </ul>
+
+        <button class="cta-button">Get Started</button>
+      </div>
+
+      <!-- PLUS TIER (Featured) -->
+      <div class="pricing-card featured">
+        <div class="featured-badge">Most Popular</div>
+        <h2 class="tier-name">Plus</h2>
+        <p class="tier-description">For serious life planners who want deeper insights and advanced features</p>
+
+        <div class="price-container">
+          <div class="price">$19</div>
+          <div class="price-period">per month</div>
+        </div>
+
+        <ul class="features-list">
+          <li class="feature-item highlight">
+            <span class="feature-value">Unlimited</span> scenario generations
+          </li>
+          <li class="feature-item highlight">
+            Advanced steering potential analysis
+          </li>
+          <li class="feature-item highlight">
+            AI-powered goal evaluation
+          </li>
+          <li class="feature-item">
+            <span class="feature-value">Unlimited</span> saved life paths
+          </li>
+          <li class="feature-item">
+            Life Book video generation
+          </li>
+          <li class="feature-item">
+            Path comparison tools
+          </li>
+          <li class="feature-item">
+            Custom character appearance
+          </li>
+          <li class="feature-item">
+            Advanced export options
+          </li>
+          <li class="feature-item">
+            Priority email support
+          </li>
+          <li class="feature-item">
+            Early access to new features
+          </li>
+        </ul>
+
+        <button class="cta-button">Start Plus Trial</button>
+      </div>
+
+      <!-- PREMIUM TIER -->
+      <div class="pricing-card premium">
+        <h2 class="tier-name">Premium</h2>
+        <p class="tier-description">Ultimate power for professionals, coaches, and teams who need collaboration and publishing</p>
+
+        <div class="price-container">
+          <div class="price">$49</div>
+          <div class="price-period">per month</div>
+        </div>
+
+        <ul class="features-list">
+          <li class="feature-item highlight">
+            Everything in Plus, plus:
+          </li>
+          <li class="feature-item highlight">
+            <span class="feature-value">Team collaboration</span> (up to 10 members)
+          </li>
+          <li class="feature-item highlight">
+            Multi-path scenario comparisons
+          </li>
+          <li class="feature-item highlight">
+            Advanced life metrics dashboard
+          </li>
+          <li class="feature-item highlight">
+            Public life story publishing
+          </li>
+          <li class="feature-item">
+            Custom branding & themes
+          </li>
+          <li class="feature-item">
+            API access for integrations
+          </li>
+          <li class="feature-item">
+            HD video exports (4K)
+          </li>
+          <li class="feature-item">
+            Interactive presentation mode
+          </li>
+          <li class="feature-item">
+            White-label options
+          </li>
+          <li class="feature-item">
+            Dedicated account manager
+          </li>
+          <li class="feature-item">
+            Custom AI model training
+          </li>
+        </ul>
+
+        <button class="cta-button">Contact Sales</button>
+      </div>
+
+    </div>
+
+    <!-- Comparison Note -->
+    <div class="comparison-note">
+      <p>
+        <strong>Not sure which plan is right for you?</strong><br>
+        Start with our Free tier and upgrade anytime as your needs grow.
+        All paid plans include a <strong>14-day money-back guarantee</strong>.
+      </p>
+    </div>
+
+  </div>
+</body>
+</html>

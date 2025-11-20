@@ -131,7 +131,27 @@ SCENARIO VARIETY:
 IMPORTANT AGE RULES:
 1. Each scenario must happen AFTER the current point in time. The age must be EQUAL TO OR GREATER than the current age (${parentNode.ageYears} years ${parentNode.ageWeeks} weeks). Never go backwards in time.
 2. Advance time by approximately 1-2 years per scenario. Also add some weeks to the age to make it more realistic.
-3. Keep life changes realistic for this timeframe.`;
+3. Keep life changes realistic for this timeframe.
+
+RESPONSE FORMAT:
+Return a JSON object with this exact structure:
+{
+  "scenarios": [
+    {
+      "title": "Short descriptive title",
+      "change": "Detailed description of what changed in this person's life - 1-2 sentences explaining the situation",
+      "ageYears": <number>,
+      "ageWeeks": <number 0-51>,
+      "location": "City or country",
+      "relationshipStatus": "Current relationship status",
+      "livingSituation": "Where and how they live",
+      "careerSituation": "Their work or career status",
+      "monthlyIncome": <number>
+    }
+  ]
+}
+
+CRITICAL: The "change" field must ALWAYS contain a meaningful, detailed description (1-2 sentences) explaining what happened in this person's life. Never leave it empty or use just a title.`;
 
   const userPrompt = `${lifeHistory}
 
@@ -154,24 +174,29 @@ Generate ${count} diverse future scenarios that happen 1-2 years AFTER the curre
   console.log('\n--- USER PROMPT ---');
   console.log(userPrompt);
 
-  // Build request body - GreenPT DOES support response_format with json_schema!
-  const requestBody = {
+  // Build request body - GreenPT uses simpler JSON format, OpenAI supports full json_schema
+  const requestBody: any = {
     model: MODEL,
     stream: true,
     temperature: 0.8,
-    //max_tokens: 1000,
     messages: [
       { role: 'system', content: systemPrompt },
       { role: 'user', content: userPrompt }
-    ],
-    response_format: {
+    ]
+  };
+
+  // OpenAI supports structured json_schema, GreenPT uses simple json_object
+  if (USE_GREENPT) {
+    requestBody.response_format = { type: 'json_object' };
+  } else {
+    requestBody.response_format = {
       type: 'json_schema',
       json_schema: {
         name: 'LifeScenarios',
         strict: true,
         schema: scenariosSchema
       }
-    }
+    };
   }
 
   console.log('\n--- REQUEST BODY (FULL JSON) ---');
@@ -251,11 +276,13 @@ Generate ${count} diverse future scenarios that happen 1-2 years AFTER the curre
     // Parse the complete accumulated JSON
     console.log('\n🔍 Parsing complete response...');
     console.log('Raw jsonBuffer length:', jsonBuffer.length);
-    console.log('Raw jsonBuffer (first 200 chars):', jsonBuffer.substring(0, 200));
+    console.log('Raw jsonBuffer (first 500 chars):', jsonBuffer.substring(0, 500));
+    console.log('Raw jsonBuffer (full):', jsonBuffer);
 
     const parsed = JSON.parse(jsonBuffer.trim()) as { scenarios: GeneratedNodeData[] };
 
     console.log('✅ Received', parsed.scenarios.length, 'scenarios');
+    console.log('Parsed structure:', JSON.stringify(parsed, null, 2));
     console.log('\n--- GENERATED SCENARIOS ---');
 
     // Validate and call onNode for each
@@ -284,9 +311,19 @@ Generate ${count} diverse future scenarios that happen 1-2 years AFTER the curre
 
       if (validateGeneratedNode(scenario)) {
         console.log(`✅ ${i + 1}: "${scenario.title}" (Age: ${scenario.ageYears}y ${scenario.ageWeeks}w)`);
-        console.log(`   ${scenario.change}`);
+        console.log(`   Change: "${scenario.change}"`);
+        console.log(`   Location: ${scenario.location}, Career: ${scenario.careerSituation}`);
+
+        // Additional validation: ensure change is not empty
+        if (!scenario.change || scenario.change.trim() === '') {
+          console.warn(`⚠️  Scenario ${i + 1} has empty "change" field! Title: "${scenario.title}"`);
+          scenario.change = scenario.title; // Fallback: use title as change description
+          console.log(`   ✓ Fixed by using title as change description`);
+        }
+
         onNode(scenario);
       } else {
+        console.error(`❌ Scenario ${i + 1} failed validation:`, scenario);
         throw new Error(`Scenario ${i + 1} failed validation`);
       }
     }

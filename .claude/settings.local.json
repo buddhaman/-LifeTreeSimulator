@@ -14,7 +14,9 @@
       "Bash(git merge:*)",
       "Bash(git stash push:*)",
       "Bash(npm run build:*)",
-      "Bash(git push:*)"
+      "Bash(git push:*)",
+      "Bash(open:*)",
+      "Bash(npm run dev:*)"
     ],
     "deny": [],
     "ask": []
