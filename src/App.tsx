@@ -3,11 +3,9 @@ import { Camera2D } from './Camera2D';
 import { graph, initializeGraph, updatePhysics, addNode, createNode, isLeafNode, Node } from './graph';
 import { render, getExpandButtonBounds } from './renderer';
 import { generateChildScenariosStreaming } from './openai';
-<<<<<<< HEAD
 import { Skeleton } from './Skeleton';
-=======
 import { generateLifeImage } from './gemini';
->>>>>>> image
+import greenptLogo from './assets/logo-greenpt.png';
 import './App.css';
 
 function App() {
@@ -587,17 +585,20 @@ function App() {
 
   // Generate life book
   const generateLifeBook = async () => {
-    if (selectedNodeId === null) {
-      console.warn('📖 [LIFEBOOK] No node selected');
+    // Get skeleton's current node
+    const characterNodeId = skeletonRef.current?.currentNode?.id;
+
+    if (characterNodeId === undefined || characterNodeId === null) {
+      console.warn('📖 [LIFEBOOK] Character not on any node');
       return;
     }
 
-    console.log('📖 [LIFEBOOK] Starting life book generation for node:', selectedNodeId);
+    console.log('📖 [LIFEBOOK] Starting life book generation for character node:', characterNodeId);
     setIsGeneratingLifeBook(true);
 
     try {
-      // Get path from root to selected node
-      const path = getPathToNode(selectedNodeId);
+      // Get path from root to character's current node
+      const path = getPathToNode(characterNodeId);
       console.log('📖 [LIFEBOOK] Path contains', path.length, 'nodes');
 
       // Generate images for nodes that don't have them
@@ -790,29 +791,34 @@ function App() {
         onMouseDown={handleMouseDown}
         onMouseUp={handleMouseUp}
       />
+
+      {/* Powered by GreenPT Logo */}
+      <div className="powered-by-logo">
+        <span className="powered-by-text">Powered by</span>
+        <img src={greenptLogo} alt="GreenPT" className="greenpt-logo" />
+      </div>
+
       <div className="sidebar">
-        <h1>Life Sim</h1>
+        <h1>LifeTree AI</h1>
 
         {/* Generate Life Book Button */}
-        {selectedNodeId !== null && (
-          <button
-            className="generate-lifebook-button"
-            onClick={generateLifeBook}
-            disabled={isGeneratingLifeBook}
-          >
-            {isGeneratingLifeBook ? (
-              <>
-                <span className="lifebook-spinner"></span>
-                Generating Life Book...
-              </>
-            ) : (
-              <>
-                <span className="lifebook-icon">📖</span>
-                Generate Life Book
-              </>
-            )}
-          </button>
-        )}
+        <button
+          className="generate-lifebook-button"
+          onClick={generateLifeBook}
+          disabled={isGeneratingLifeBook}
+        >
+          {isGeneratingLifeBook ? (
+            <>
+              <span className="lifebook-spinner"></span>
+              Generating Life Book...
+            </>
+          ) : (
+            <>
+              <span className="lifebook-icon">📖</span>
+              Generate Life Book
+            </>
+          )}
+        </button>
 
         {/* Image Display Section */}
         {selectedNodeId !== null && (
