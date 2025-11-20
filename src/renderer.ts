@@ -67,21 +67,48 @@ export function drawBubble(
 
   ctx.save();
 
-  // Comic book shadow effect with character path support
+  // AMPLIFIED effects for character path and growing nodes
   if (isOnCharacterPath) {
-    // Terracotta glow for character path (the main storyline)
-    const glowIntensity = 0.7 + Math.sin(Date.now() / 300) * 0.3; // Pulsing effect
-    ctx.shadowColor = `rgba(184, 119, 94, ${glowIntensity})`; // Terracotta
-    ctx.shadowBlur = 35;
+    // AMPLIFIED Terracotta glow for character path (the main storyline)
+    const glowIntensity = 0.85 + Math.sin(Date.now() / 250) * 0.15; // Stronger, smoother pulsing
+
+    // Multiple layered glows for intense effect
+    ctx.shadowColor = `rgba(184, 119, 94, ${glowIntensity})`;
+    ctx.shadowBlur = 50;
     ctx.shadowOffsetX = 0;
     ctx.shadowOffsetY = 0;
+
+    // Draw multiple passes for stronger glow
+    for (let i = 0; i < 3; i++) {
+      ctx.shadowBlur = 50 - i * 10;
+      drawRoundedRect(ctx, x, y, currentWidth, currentHeight, radius);
+      ctx.fill();
+    }
   } else if (node.isGrowing) {
-    // Sage green glow for growing nodes
-    const glowIntensity = 0.6 + Math.sin(Date.now() / 200) * 0.4; // Pulsing effect
+    // AMPLIFIED Sage green glow for growing nodes with particle effect
+    const time = Date.now();
+    const glowIntensity = 0.8 + Math.sin(time / 150) * 0.2; // Faster, stronger pulse
+    const scaleEffect = 1 + Math.sin(time / 200) * 0.03; // Breathing effect
+
+    // Strong multi-layer glow
     ctx.shadowColor = `rgba(138, 154, 135, ${glowIntensity})`;
-    ctx.shadowBlur = 30;
+    ctx.shadowBlur = 45;
     ctx.shadowOffsetX = 0;
     ctx.shadowOffsetY = 0;
+
+    ctx.save();
+    ctx.translate(node.x, node.y);
+    ctx.scale(scaleEffect, scaleEffect);
+    ctx.translate(-node.x, -node.y);
+
+    // Multiple glow layers
+    for (let i = 0; i < 3; i++) {
+      ctx.shadowBlur = 45 - i * 12;
+      drawRoundedRect(ctx, x, y, currentWidth, currentHeight, radius);
+      ctx.fill();
+    }
+
+    ctx.restore();
   } else {
     // Offset shadow for comic depth
     const shadowOffset = isHovered ? 6 : 4;
@@ -99,11 +126,26 @@ export function drawBubble(
   ctx.restore();
   ctx.save();
 
-  // Hand-drawn style border with character path support
+  // AMPLIFIED border effects with character path support
   if (isOnCharacterPath) {
-    // Terracotta border for character path (the main storyline)
-    ctx.strokeStyle = '#B8775E'; // Terracotta
-    ctx.lineWidth = 3.5;
+    // AMPLIFIED Terracotta border for character path (the main storyline)
+    const borderPulse = 1 + Math.sin(Date.now() / 300) * 0.15;
+
+    // Outer glow border
+    ctx.strokeStyle = `rgba(184, 119, 94, 0.4)`;
+    ctx.lineWidth = 8 * borderPulse;
+    drawRoundedRect(ctx, x, y, currentWidth, currentHeight, radius);
+    ctx.stroke();
+
+    // Middle highlight border
+    ctx.strokeStyle = `rgba(255, 200, 150, 0.6)`;
+    ctx.lineWidth = 5 * borderPulse;
+    drawRoundedRect(ctx, x, y, currentWidth, currentHeight, radius);
+    ctx.stroke();
+
+    // Solid main border
+    ctx.strokeStyle = '#B8775E';
+    ctx.lineWidth = 4;
     drawRoundedRect(ctx, x, y, currentWidth, currentHeight, radius);
     ctx.stroke();
   } else if (isSelected) {
@@ -113,9 +155,18 @@ export function drawBubble(
     drawRoundedRect(ctx, x, y, currentWidth, currentHeight, radius);
     ctx.stroke();
   } else if (node.isGrowing) {
-    // Green border for growing nodes
+    // AMPLIFIED Green border for growing nodes
+    const borderPulse = 1 + Math.sin(Date.now() / 200) * 0.2;
+
+    // Outer glow
+    ctx.strokeStyle = `rgba(138, 154, 135, 0.5)`;
+    ctx.lineWidth = 6 * borderPulse;
+    drawRoundedRect(ctx, x, y, currentWidth, currentHeight, radius);
+    ctx.stroke();
+
+    // Main border
     ctx.strokeStyle = '#8A9A87';
-    ctx.lineWidth = 2.5;
+    ctx.lineWidth = 3.5;
     drawRoundedRect(ctx, x, y, currentWidth, currentHeight, radius);
     ctx.stroke();
   } else {
@@ -295,31 +346,12 @@ export function drawEdge(ctx: CanvasRenderingContext2D, fromNode: Node, toNode: 
 
   const controlOffset = Math.abs(toY - fromY) * 0.5;
 
-  // Character path gets thicker lines
-  const startWidth = isOnCharacterPath ? 10 : 6; // Thicker at parent for character path
-  const endWidth = isOnCharacterPath ? 3 : 2;   // Thicker at child for character path
+  // SUPER AMPLIFIED Character path gets much thicker lines
+  const startWidth = isOnCharacterPath ? 18 : 6; // Even thicker for maximum visibility
+  const endWidth = isOnCharacterPath ? 6 : 2;   // Thicker at child for character path
   const segments = 20;
 
-  ctx.save();
-
-  // Comic book edge styling with character path support
-  if (isOnCharacterPath) {
-    // Terracotta glow for character path (the main storyline)
-    const glowIntensity = 0.7 + Math.sin(Date.now() / 300) * 0.3; // Pulsing effect
-    ctx.shadowColor = `rgba(184, 119, 94, ${glowIntensity})`; // Terracotta
-    ctx.shadowBlur = 20;
-    ctx.fillStyle = `rgba(184, 119, 94, ${0.8 + glowIntensity * 0.2})`;
-  } else if (toNode.isGrowing) {
-    // Sage green glow for growing edges
-    const glowIntensity = 0.6 + Math.sin(Date.now() / 200) * 0.4; // Pulsing effect
-    ctx.shadowColor = `rgba(138, 154, 135, ${glowIntensity})`;
-    ctx.shadowBlur = 15;
-    ctx.fillStyle = `rgba(138, 154, 135, ${0.7 + glowIntensity * 0.2})`;
-  } else {
-    ctx.fillStyle = 'rgba(125, 107, 92, 0.4)'; // Sepia/brown sketch color
-  }
-
-  // Draw tapered path by creating a polygon along the bezier curve
+  // Calculate bezier points first (before save/restore)
   const points: { x: number; y: number; width: number }[] = [];
 
   for (let i = 0; i <= segments; i++) {
@@ -342,46 +374,165 @@ export function drawEdge(ctx: CanvasRenderingContext2D, fromNode: Node, toNode: 
     points.push({ x, y, width });
   }
 
-  // Create outline path for tapered shape
-  ctx.beginPath();
+  // Helper function to draw the edge path
+  const drawEdgePath = () => {
+    ctx.beginPath();
 
-  // Right side
-  for (let i = 0; i < points.length; i++) {
-    const p = points[i];
-    const angle = i < points.length - 1
-      ? Math.atan2(points[i + 1].y - p.y, points[i + 1].x - p.x)
-      : Math.atan2(p.y - points[i - 1].y, p.x - points[i - 1].x);
+    // Right side
+    for (let i = 0; i < points.length; i++) {
+      const p = points[i];
+      const angle = i < points.length - 1
+        ? Math.atan2(points[i + 1].y - p.y, points[i + 1].x - p.x)
+        : Math.atan2(p.y - points[i - 1].y, p.x - points[i - 1].x);
 
-    const offsetX = Math.cos(angle + Math.PI / 2) * p.width / 2;
-    const offsetY = Math.sin(angle + Math.PI / 2) * p.width / 2;
+      const offsetX = Math.cos(angle + Math.PI / 2) * p.width / 2;
+      const offsetY = Math.sin(angle + Math.PI / 2) * p.width / 2;
 
-    if (i === 0) {
-      ctx.moveTo(p.x + offsetX, p.y + offsetY);
-    } else {
+      if (i === 0) {
+        ctx.moveTo(p.x + offsetX, p.y + offsetY);
+      } else {
+        ctx.lineTo(p.x + offsetX, p.y + offsetY);
+      }
+    }
+
+    // Left side (reverse)
+    for (let i = points.length - 1; i >= 0; i--) {
+      const p = points[i];
+      const angle = i < points.length - 1
+        ? Math.atan2(points[i + 1].y - p.y, points[i + 1].x - p.x)
+        : Math.atan2(p.y - points[i - 1].y, p.x - points[i - 1].x);
+
+      const offsetX = Math.cos(angle - Math.PI / 2) * p.width / 2;
+      const offsetY = Math.sin(angle - Math.PI / 2) * p.width / 2;
+
       ctx.lineTo(p.x + offsetX, p.y + offsetY);
     }
+
+    ctx.closePath();
+  };
+
+  ctx.save();
+
+  // SUPER AMPLIFIED multi-layer glow for character path edges
+  if (isOnCharacterPath) {
+    const time = Date.now();
+    const glowIntensity = 0.95 + Math.sin(time / 250) * 0.05; // Intense, smooth pulsing
+
+    // Layer 1: Outermost glow (warm highlight)
+    ctx.shadowColor = `rgba(255, 200, 150, ${glowIntensity * 0.8})`;
+    ctx.shadowBlur = 50;
+    ctx.fillStyle = `rgba(255, 200, 150, 0.4)`;
+    drawEdgePath();
+    ctx.fill();
+
+    // Layer 2: Middle glow (terracotta)
+    ctx.shadowColor = `rgba(184, 119, 94, ${glowIntensity})`;
+    ctx.shadowBlur = 35;
+    ctx.fillStyle = `rgba(184, 119, 94, 0.85)`;
+    drawEdgePath();
+    ctx.fill();
+
+    // Layer 3: Inner core (solid terracotta)
+    ctx.shadowColor = `rgba(184, 119, 94, ${glowIntensity})`;
+    ctx.shadowBlur = 20;
+    ctx.fillStyle = `rgba(184, 119, 94, 0.95)`;
+    drawEdgePath();
+    ctx.fill();
+  } else if (toNode.isGrowing) {
+    // AMPLIFIED Sage green glow for growing edges
+    const glowIntensity = 0.8 + Math.sin(Date.now() / 150) * 0.2;
+    ctx.shadowColor = `rgba(138, 154, 135, ${glowIntensity})`;
+    ctx.shadowBlur = 25;
+    ctx.fillStyle = `rgba(138, 154, 135, ${0.8 + glowIntensity * 0.2})`;
+  } else {
+    ctx.fillStyle = 'rgba(125, 107, 92, 0.4)'; // Sepia/brown sketch color
   }
 
-  // Left side (reverse)
-  for (let i = points.length - 1; i >= 0; i--) {
-    const p = points[i];
-    const angle = i < points.length - 1
-      ? Math.atan2(points[i + 1].y - p.y, points[i + 1].x - p.x)
-      : Math.atan2(p.y - points[i - 1].y, p.x - points[i - 1].x);
-
-    const offsetX = Math.cos(angle - Math.PI / 2) * p.width / 2;
-    const offsetY = Math.sin(angle - Math.PI / 2) * p.width / 2;
-
-    ctx.lineTo(p.x + offsetX, p.y + offsetY);
+  // For non-character-path edges, draw once (using the helper function)
+  if (!isOnCharacterPath) {
+    drawEdgePath();
+    ctx.fill();
   }
-
-  ctx.closePath();
-  ctx.fill();
 
   ctx.restore();
 }
 
-// Draw subtle grid with dots at intersections (comic book style)
+// Draw enhanced paper background with texture and effects
+function drawPaperBackground(ctx: CanvasRenderingContext2D, width: number, height: number): void {
+  ctx.save();
+
+  // Base paper color
+  ctx.fillStyle = '#F8F5F2';
+  ctx.fillRect(0, 0, width, height);
+
+  // Paper noise/grain texture
+  const imageData = ctx.getImageData(0, 0, width, height);
+  const data = imageData.data;
+  for (let i = 0; i < data.length; i += 4) {
+    const noise = (Math.random() - 0.5) * 8;
+    data[i] += noise;     // R
+    data[i + 1] += noise; // G
+    data[i + 2] += noise; // B
+  }
+  ctx.putImageData(imageData, 0, 0);
+
+  // Vignette effect (darker edges)
+  const gradient = ctx.createRadialGradient(width / 2, height / 2, 0, width / 2, height / 2, Math.max(width, height) * 0.7);
+  gradient.addColorStop(0, 'rgba(125, 107, 92, 0)');
+  gradient.addColorStop(1, 'rgba(125, 107, 92, 0.12)');
+  ctx.fillStyle = gradient;
+  ctx.fillRect(0, 0, width, height);
+
+  ctx.restore();
+}
+
+// Draw ruled lines (notebook paper effect)
+function drawRuledLines(ctx: CanvasRenderingContext2D, camera: Camera2D): void {
+  const { width, height } = ctx.canvas;
+  const topLeft = camera.screenToWorld(0, 0);
+  const bottomRight = camera.screenToWorld(width, height);
+
+  const lineSpacing = 150; // Spacing between ruled lines in world units
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(125, 107, 92, 0.06)';
+  ctx.lineWidth = 1;
+  ctx.setLineDash([5, 5]);
+
+  const startY = Math.floor(topLeft.y / lineSpacing) * lineSpacing;
+  const endY = Math.ceil(bottomRight.y / lineSpacing) * lineSpacing;
+
+  for (let y = startY; y <= endY; y += lineSpacing) {
+    ctx.beginPath();
+    ctx.moveTo(topLeft.x, y);
+    ctx.lineTo(bottomRight.x, y);
+    ctx.stroke();
+  }
+
+  ctx.restore();
+}
+
+// Draw margin line (red notebook margin)
+function drawMarginLine(ctx: CanvasRenderingContext2D, camera: Camera2D): void {
+  const { height } = ctx.canvas;
+  const topLeft = camera.screenToWorld(0, 0);
+  const bottomRight = camera.screenToWorld(0, height);
+
+  const marginX = topLeft.x + 200; // 200 world units from left edge
+
+  ctx.save();
+  ctx.strokeStyle = 'rgba(184, 119, 94, 0.15)'; // Terracotta for margin
+  ctx.lineWidth = 2;
+
+  ctx.beginPath();
+  ctx.moveTo(marginX, topLeft.y);
+  ctx.lineTo(marginX, bottomRight.y);
+  ctx.stroke();
+
+  ctx.restore();
+}
+
+// Draw irregular hand-drawn grid with crosses
 function drawGrid(ctx: CanvasRenderingContext2D, camera: Camera2D): void {
   const { width, height } = ctx.canvas;
 
@@ -390,7 +541,6 @@ function drawGrid(ctx: CanvasRenderingContext2D, camera: Camera2D): void {
   const bottomRight = camera.screenToWorld(width, height);
 
   const gridSize = 100; // Grid spacing in world units
-  const dotSize = 2; // Size of dot
 
   ctx.save();
 
@@ -400,14 +550,37 @@ function drawGrid(ctx: CanvasRenderingContext2D, camera: Camera2D): void {
   const endX = Math.ceil(bottomRight.x / gridSize) * gridSize;
   const endY = Math.ceil(bottomRight.y / gridSize) * gridSize;
 
-  ctx.fillStyle = 'rgba(125, 107, 92, 0.15)'; // Subtle sepia dots
+  ctx.strokeStyle = 'rgba(125, 107, 92, 0.15)';
+  ctx.lineWidth = 1.5;
+  ctx.lineCap = 'round';
 
-  // Draw dots at grid intersections
+  // Draw hand-drawn crosses at grid intersections (static positions for clean look)
   for (let x = startX; x <= endX; x += gridSize) {
     for (let y = startY; y <= endY; y += gridSize) {
+      // Use deterministic "random" values based on position (so crosses don't move)
+      const hash = (x * 73856093) ^ (y * 19349663);
+      const pseudoRand1 = ((hash & 0xFFFF) / 0xFFFF - 0.5) * 2;
+      const pseudoRand2 = (((hash >> 16) & 0xFFFF) / 0xFFFF - 0.5) * 2;
+      const pseudoRand3 = ((hash & 0xFF) / 0xFF);
+
+      const offsetX = pseudoRand1;
+      const offsetY = pseudoRand2;
+      const crossSize = 2.5 + pseudoRand3 * 1.5;
+
+      const cx = x + offsetX;
+      const cy = y + offsetY;
+
+      // Horizontal line
       ctx.beginPath();
-      ctx.arc(x, y, dotSize, 0, Math.PI * 2);
-      ctx.fill();
+      ctx.moveTo(cx - crossSize, cy);
+      ctx.lineTo(cx + crossSize, cy);
+      ctx.stroke();
+
+      // Vertical line
+      ctx.beginPath();
+      ctx.moveTo(cx, cy - crossSize);
+      ctx.lineTo(cx, cy + crossSize);
+      ctx.stroke();
     }
   }
 
@@ -426,15 +599,16 @@ export function render(
 ): void {
   const { width, height } = ctx.canvas;
 
-  // Clear canvas with warm paper background (comic book style)
+  // Enhanced paper background with texture and vignette
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.fillStyle = '#F8F5F2'; // Warm paper color
-  ctx.fillRect(0, 0, width, height);
+  drawPaperBackground(ctx, width, height);
 
-  // Apply camera transform
+  // Apply camera transform for world-space elements
   camera.applyTransform(ctx);
 
-  // Draw grid first (behind everything)
+  // Draw notebook-style background elements
+  drawRuledLines(ctx, camera);
+  drawMarginLine(ctx, camera);
   drawGrid(ctx, camera);
 
   // Get character path for gold highlighting

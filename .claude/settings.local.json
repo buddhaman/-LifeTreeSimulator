@@ -9,9 +9,11 @@
       "Bash(git branch:*)",
       "WebFetch(domain:ai.google.dev)",
       "WebSearch",
-      "Bash(dir:*)",
-      "Bash(if not exist public mkdir public)",
-      "Bash(move logo-greenpt.png publiclogo-greenpt.png)"
+      "Bash(git add:*)",
+      "Bash(git commit:*)",
+      "Bash(git merge:*)",
+      "Bash(git stash push:*)",
+      "Bash(npm run build:*)"
     ],
     "deny": [],
     "ask": []
