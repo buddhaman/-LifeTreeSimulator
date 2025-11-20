@@ -1,5 +1,5 @@
 // Canvas rendering functions
-import { isLeafNode, Node, Graph } from './graph';
+import { isLeafNode, Node, Graph, getPathToNode } from './graph';
 import { Camera2D } from './Camera2D';
 
 // Draw a rounded rectangle
@@ -54,7 +54,8 @@ export function drawBubble(
   ctx: CanvasRenderingContext2D,
   node: Node,
   isHovered: boolean = false,
-  isSelected: boolean = false
+  isSelected: boolean = false,
+  isOnCharacterPath: boolean = false
 ): void {
   // Use current dimensions directly
   const currentWidth = node.currentWidth;
@@ -66,8 +67,16 @@ export function drawBubble(
 
   ctx.save();
 
+  // Gold glow for character path nodes (highest priority)
+  if (isOnCharacterPath) {
+    const glowIntensity = 0.7 + Math.sin(Date.now() / 300) * 0.3; // Pulsing effect
+    ctx.shadowColor = `rgba(255, 215, 0, ${glowIntensity})`;
+    ctx.shadowBlur = 45;
+    ctx.shadowOffsetX = 0;
+    ctx.shadowOffsetY = 0;
+  }
   // Green glow for growing nodes
-  if (node.isGrowing) {
+  else if (node.isGrowing) {
     const glowIntensity = 0.6 + Math.sin(Date.now() / 200) * 0.4; // Pulsing effect
     ctx.shadowColor = `rgba(52, 211, 153, ${glowIntensity})`;
     ctx.shadowBlur = 40;
@@ -91,7 +100,13 @@ export function drawBubble(
   ctx.save();
 
   // Subtle border
-  if (isSelected) {
+  if (isOnCharacterPath) {
+    // Gold border for character path
+    ctx.strokeStyle = 'rgba(255, 215, 0, 0.8)';
+    ctx.lineWidth = 3;
+    drawRoundedRect(ctx, x, y, currentWidth, currentHeight, radius);
+    ctx.stroke();
+  } else if (isSelected) {
     ctx.strokeStyle = 'rgba(0, 122, 255, 0.8)';
     ctx.lineWidth = 2.5;
     drawRoundedRect(ctx, x, y, currentWidth, currentHeight, radius);
@@ -233,7 +248,7 @@ export function getExpandButtonBounds(node: Node) {
 }
 
 // Draw an edge (bezier curve) - from parent to child with tapered thickness
-export function drawEdge(ctx: CanvasRenderingContext2D, fromNode: Node, toNode: Node): void {
+export function drawEdge(ctx: CanvasRenderingContext2D, fromNode: Node, toNode: Node, isOnCharacterPath: boolean = false): void {
   const fromX = fromNode.x;
   const fromY = fromNode.y - fromNode.currentHeight / 2; // Top of parent
   const toX = toNode.x;
@@ -241,14 +256,21 @@ export function drawEdge(ctx: CanvasRenderingContext2D, fromNode: Node, toNode: 
 
   const controlOffset = Math.abs(toY - fromY) * 0.5;
 
-  const startWidth = 8; // Thick at parent
-  const endWidth = 2;   // Thin at child
+  const startWidth = isOnCharacterPath ? 12 : 8; // Thicker at parent for character path
+  const endWidth = isOnCharacterPath ? 4 : 2;   // Thicker at child for character path
   const segments = 20;
 
   ctx.save();
 
+  // Gold glow for character path edges (highest priority)
+  if (isOnCharacterPath) {
+    const glowIntensity = 0.7 + Math.sin(Date.now() / 300) * 0.3; // Pulsing effect
+    ctx.shadowColor = `rgba(255, 215, 0, ${glowIntensity})`;
+    ctx.shadowBlur = 25;
+    ctx.fillStyle = `rgba(255, 215, 0, ${0.8 + glowIntensity * 0.2})`;
+  }
   // Green glow for growing edges
-  if (toNode.isGrowing) {
+  else if (toNode.isGrowing) {
     const glowIntensity = 0.6 + Math.sin(Date.now() / 200) * 0.4; // Pulsing effect
     ctx.shadowColor = `rgba(52, 211, 153, ${glowIntensity})`;
     ctx.shadowBlur = 20;
@@ -369,7 +391,8 @@ export function render(
   graph: Graph,
   hoveredNodeId: number | null,
   selectedNodeId: number | null,
-  hoveredButtonNodeId: number | null
+  hoveredButtonNodeId: number | null,
+  characterNodeId: number | null
 ): void {
   const { width, height } = ctx.canvas;
 
@@ -384,12 +407,18 @@ export function render(
   // Draw grid first (behind everything)
   drawGrid(ctx, camera);
 
+  // Get character path for gold highlighting
+  const characterPath = characterNodeId !== null ? getPathToNode(characterNodeId) : [];
+  const characterPathSet = new Set(characterPath);
+
   // Draw edges
   graph.edges.forEach(edge => {
     const fromNode = graph.nodes.find(n => n.id === edge.fromId);
     const toNode = graph.nodes.find(n => n.id === edge.toId);
     if (fromNode && toNode) {
-      drawEdge(ctx, fromNode, toNode);
+      // Check if this edge is on the character path
+      const isOnCharacterPath = characterPathSet.has(edge.fromId) && characterPathSet.has(edge.toId);
+      drawEdge(ctx, fromNode, toNode, isOnCharacterPath);
     }
   });
 
@@ -397,7 +426,8 @@ export function render(
   graph.nodes.forEach(node => {
     const isHovered = node.id === hoveredNodeId;
     const isSelected = node.id === selectedNodeId;
-    drawBubble(ctx, node, isHovered, isSelected);
+    const isOnCharacterPath = characterPathSet.has(node.id);
+    drawBubble(ctx, node, isHovered, isSelected, isOnCharacterPath);
   });
 
   // Draw expand buttons on leaf nodes (only if not growing)

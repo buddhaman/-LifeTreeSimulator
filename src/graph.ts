@@ -140,6 +140,20 @@ export function isLeafNode(nodeId: number): boolean {
   return getChildren(nodeId).length === 0;
 }
 
+// Get path from root to a specific node
+export function getPathToNode(nodeId: number): number[] {
+  const path: number[] = [];
+  let currentId: number | null = nodeId;
+
+  while (currentId !== null) {
+    path.unshift(currentId);
+    const node = findNode(currentId);
+    currentId = node?.parentId ?? null;
+  }
+
+  return path;
+}
+
 // Physics configuration - exported so UI can modify
 export interface PhysicsConfig {
   repulsionStrength: number;

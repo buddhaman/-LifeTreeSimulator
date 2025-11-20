@@ -134,8 +134,11 @@ function App() {
         }
       }
 
+      // Get character node ID for gold path rendering
+      const characterNodeId = skeletonRef.current?.currentNode?.id ?? null;
+
       // Render
-      render(ctx, camera, graph, hoveredNodeId, selectedNodeId, hoveredButtonNodeId);
+      render(ctx, camera, graph, hoveredNodeId, selectedNodeId, hoveredButtonNodeId, characterNodeId);
 
       // Render skeleton in world space (affected by camera)
       if (skeletonRef.current) {
