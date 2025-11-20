@@ -93,38 +93,34 @@ function App() {
     if (!ctx || !camera) return;
 
     const renderLoop = () => {
-      console.log('Drag state:', dragStateRef.current.type);
-
       // Update physics simulation
       updatePhysics();
 
       // Update skeleton
       if (skeletonRef.current) {
-        // Update character left hand position when dragging (before physics update)
-        if (dragStateRef.current.type === 'character') {
-          console.log('Dragging character! Mouse pos:', mouseWorldPosRef.current);
+        const isDragging = dragStateRef.current.type === 'character';
 
-          // Detach from node
-          if (skeletonRef.current.currentNode !== null) {
-            console.log('Detaching from node');
-            skeletonRef.current.currentNode = null;
-          }
+        // Update character left hand position when dragging (before physics update)
+        if (isDragging) {
+          // Detach from node completely
+          skeletonRef.current.currentNode = null;
 
           // Get left hand particle (index 15 in particles array)
           const leftHand = skeletonRef.current.particles[15];
           if (leftHand) {
-            // Pin left hand to mouse position
+            // Pin left hand directly to mouse position (no offset)
+            // Account for z-projection: screenY = worldY - z, so worldY = screenY + z
+            const targetZ = 50;
             leftHand.x = mouseWorldPosRef.current.x;
-            leftHand.y = mouseWorldPosRef.current.y;
-            leftHand.oldX = mouseWorldPosRef.current.x;
-            leftHand.oldY = mouseWorldPosRef.current.y;
-            leftHand.z = 50; // Keep at a reasonable height
-            leftHand.oldZ = 50;
-            console.log('Left hand at:', leftHand.x, leftHand.y);
+            leftHand.y = mouseWorldPosRef.current.y + targetZ;
+            leftHand.z = targetZ;
+            leftHand.oldX = leftHand.x;
+            leftHand.oldY = leftHand.y;
+            leftHand.oldZ = leftHand.z;
           }
         }
 
-        skeletonRef.current.update();
+        skeletonRef.current.update(1, isDragging);
       }
 
       // Update dragged node position every frame
@@ -250,15 +246,10 @@ function App() {
     const worldPos = camera.screenToWorld(e.clientX, e.clientY);
     mouseWorldPosRef.current = worldPos;
 
-    console.log('Mouse down at world pos:', worldPos);
-    console.log('Skeleton head at:', skeleton?.head.x, skeleton?.head.y, skeleton?.head.z);
-
     // Priority: Character > Node > Canvas
     const hitChar = hitTestCharacter(worldPos.x, worldPos.y);
-    console.log('Hit character?', hitChar);
 
     if (hitChar && skeleton) {
-      console.log('Setting drag state to CHARACTER');
       // Grab character - detach from node
       skeleton.currentNode = null;
       const headScreenY = skeleton.head.y - skeleton.head.z;
@@ -273,7 +264,6 @@ function App() {
     } else {
       const node = hitTest(worldPos.x, worldPos.y);
       if (node) {
-        console.log('Setting drag state to NODE');
         // Grab node
         setDraggedNodeId(node.id);
         dragStateRef.current = { type: 'node', nodeId: node.id };
@@ -281,7 +271,6 @@ function App() {
           canvasRef.current.style.cursor = 'grabbing';
         }
       } else {
-        console.log('Setting drag state to CANVAS');
         // Grab canvas
         dragStateRef.current = { type: 'canvas' };
         if (canvasRef.current) {

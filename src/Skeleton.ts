@@ -22,7 +22,7 @@ export class VerletParticle {
     this.pinned = false;
   }
 
-  update(dt: number) {
+  update(dt: number, friction: number = 0.98) {
     if (this.pinned) return;
 
     const vx = this.x - this.oldX;
@@ -33,9 +33,10 @@ export class VerletParticle {
     this.oldY = this.y;
     this.oldZ = this.z;
 
-    this.x += vx;
-    this.y += vy;
-    this.z += vz;
+    // Apply friction
+    this.x += vx * friction;
+    this.y += vy * friction;
+    this.z += vz * friction;
   }
 
   applyForce(fx: number, fy: number, fz: number) {
@@ -188,9 +189,9 @@ export class Skeleton {
     this.constraints.push(new VerletConstraint(rightShoulder, rightElbow));
     this.constraints.push(new VerletConstraint(rightElbow, rightHand));
 
-    // Feet will be pinned in update() based on currentNode
-    this.leftFoot.pinned = true;
-    this.rightFoot.pinned = true;
+    // Feet start unpinned
+    this.leftFoot.pinned = false;
+    this.rightFoot.pinned = false;
   }
 
   // Set the node the skeleton is standing on
@@ -198,14 +199,56 @@ export class Skeleton {
     this.currentNode = node;
   }
 
-  update(dt: number = 1) {
-    // Apply upward force to head (no gravity, so limbs flail)
-    const upwardForce = 0.5;
-    this.head.applyForce(0, 0, upwardForce);
+  update(dt: number = 1, isDragging: boolean = false) {
+    // Apply forces based on drag state
+    const friction = 0.97; // Less friction for more movement
 
-    // Update particles
+    // Get arm particles for squirming
+    const leftElbow = this.particles[14];
+    const rightElbow = this.particles[17];
+    const rightHand = this.particles[18];
+
+    if (isDragging) {
+      // Apply downward gravity to all particles when being dragged
+      const gravity = -0.05;
+      for (const particle of this.particles) {
+        particle.applyForce(0, 0, gravity);
+      }
+
+      // Add random squirming impulses to arms only - hard but rare (about 2 times per second at 60fps)
+      const squirmStrength = 8.0;
+      const squirmChance = 0.033; // ~2 times per second at 60fps
+
+      // Random hard impulses to make character squirm (arms only)
+      if (Math.random() < squirmChance) {
+        leftElbow.applyForce((Math.random() - 0.5) * squirmStrength, (Math.random() - 0.5) * squirmStrength, (Math.random() - 0.5) * squirmStrength);
+      }
+      if (Math.random() < squirmChance) {
+        rightElbow.applyForce((Math.random() - 0.5) * squirmStrength, (Math.random() - 0.5) * squirmStrength, (Math.random() - 0.5) * squirmStrength);
+      }
+      if (Math.random() < squirmChance) {
+        rightHand.applyForce((Math.random() - 0.5) * squirmStrength, (Math.random() - 0.5) * squirmStrength, (Math.random() - 0.5) * squirmStrength);
+      }
+    } else {
+      // Apply upward force to head when standing (no gravity, so limbs flail)
+      const upwardForce = 0.5;
+      this.head.applyForce(0, 0, upwardForce);
+
+      // Add occasional arm movements when idle (more rare)
+      const idleSquirmStrength = 4.0;
+      const idleSquirmChance = 0.01; // ~0.6 times per second at 60fps
+
+      if (Math.random() < idleSquirmChance) {
+        leftElbow.applyForce((Math.random() - 0.5) * idleSquirmStrength, (Math.random() - 0.5) * idleSquirmStrength, (Math.random() - 0.5) * idleSquirmStrength);
+      }
+      if (Math.random() < idleSquirmChance) {
+        rightElbow.applyForce((Math.random() - 0.5) * idleSquirmStrength, (Math.random() - 0.5) * idleSquirmStrength, (Math.random() - 0.5) * idleSquirmStrength);
+      }
+    }
+
+    // Update particles with friction
     for (const particle of this.particles) {
-      particle.update(dt);
+      particle.update(dt, friction);
     }
 
     // Solve constraints (multiple iterations for stability)
@@ -221,13 +264,20 @@ export class Skeleton {
       const footSpacing = 20; // Distance between feet
       const nodeTopY = this.currentNode.y - this.currentNode.currentHeight / 2;
 
+      // Pin feet and set position
       this.leftFoot.x = this.currentNode.x - footSpacing / 2;
       this.leftFoot.y = nodeTopY;
       this.leftFoot.z = 0;
+      this.leftFoot.oldX = this.leftFoot.x;
+      this.leftFoot.oldY = this.leftFoot.y;
+      this.leftFoot.oldZ = 0;
 
       this.rightFoot.x = this.currentNode.x + footSpacing / 2;
       this.rightFoot.y = nodeTopY;
       this.rightFoot.z = 0;
+      this.rightFoot.oldX = this.rightFoot.x;
+      this.rightFoot.oldY = this.rightFoot.y;
+      this.rightFoot.oldZ = 0;
     }
 
     // Eye blinking logic
