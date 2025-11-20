@@ -3,12 +3,14 @@
   height: 100vh;
   position: relative;
   overflow: hidden;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', sans-serif;
+  font-family: 'Lora', 'Merriweather', serif;
+  background: #F8F5F2;
 }
 
 canvas {
   display: block;
   cursor: grab;
+  background: #F8F5F2;
 }
 
 .sidebar {
@@ -17,24 +19,43 @@ canvas {
   right: 0;
   width: 400px;
   height: 100vh;
-  background: rgba(255, 255, 255, 0.80);
-  backdrop-filter: blur(40px) saturate(180%);
-  -webkit-backdrop-filter: blur(40px) saturate(180%);
-  color: #1d1d1f;
+  background: #F8F5F2;
+  color: #333333;
   padding: 32px 28px;
-  box-shadow: -1px 0 0 rgba(0, 0, 0, 0.04), -4px 0 24px rgba(0, 0, 0, 0.08);
+  border-left: 3px solid #333333;
+  box-shadow: -8px 0 0 rgba(51, 51, 51, 0.1);
   overflow-y: auto;
 }
 
-.sidebar h1 {
-  font-size: 28px;
-  font-weight: 700;
-  letter-spacing: -0.5px;
-  margin-bottom: 24px;
-  color: #1d1d1f;
+/* Hand-drawn border effect for sidebar */
+.sidebar::before {
+  content: '';
+  position: absolute;
+  top: 0;
+  left: -3px;
+  width: 3px;
+  height: 100%;
+  background: repeating-linear-gradient(
+    to bottom,
+    #333333 0px,
+    #333333 10px,
+    transparent 10px,
+    transparent 11px
+  );
+  pointer-events: none;
 }
 
-/* Powered by GreenPT Logo */
+.sidebar h1 {
+  font-size: 32px;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  margin-bottom: 24px;
+  color: #333333;
+  font-family: 'Patrick Hand', 'Architects Daughter', cursive;
+  text-transform: uppercase;
+}
+
+/* Powered by GreenPT Logo - Comic Book Style */
 .powered-by-logo {
   position: fixed;
   bottom: 20px;
@@ -43,18 +64,18 @@ canvas {
   align-items: center;
   gap: 8px;
   z-index: 100;
-  background: rgba(255, 255, 255, 0.9);
-  backdrop-filter: blur(10px);
+  background: #F8F5F2;
   padding: 10px 16px;
-  border-radius: 12px;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.1);
+  border-radius: 6px;
+  border: 2px solid #333333;
+  box-shadow: 3px 3px 0 rgba(51, 51, 51, 0.2);
 }
 
 .powered-by-text {
   font-size: 12px;
-  color: #6e6e73;
-  font-weight: 500;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
+  color: #7D6B5C;
+  font-weight: 600;
+  font-family: 'Patrick Hand', cursive;
 }
 
 .greenpt-logo {
@@ -63,66 +84,58 @@ canvas {
   object-fit: contain;
 }
 
-/* Canvas Overlay Life Book Button */
+/* Canvas Overlay Life Book Button - Comic Book Style */
 .canvas-lifebook-button {
   position: fixed;
   top: 20px;
   right: 420px;
   padding: 16px 24px;
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-  border: none;
-  border-radius: 14px;
-  color: #000;
-  font-size: 17px;
+  background: #B8775E;
+  border: 3px solid #333333;
+  border-radius: 6px;
+  color: #FFF;
+  font-size: 18px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s ease;
-  box-shadow:
-    0 4px 15px rgba(255, 215, 0, 0.4),
-    0 0 20px rgba(255, 215, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  transition: all 0.2s ease;
+  box-shadow: 4px 4px 0 rgba(51, 51, 51, 0.3);
+  font-family: 'Patrick Hand', cursive;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
   z-index: 100;
-  position: relative;
-  overflow: hidden;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
+/* Halftone pattern */
 .canvas-lifebook-button::before {
   content: '';
   position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(
-    45deg,
-    transparent,
-    rgba(255, 255, 255, 0.3),
-    transparent
-  );
-  transform: rotate(45deg);
-  animation: shimmer 3s infinite;
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+  background-size: 8px 8px;
+  pointer-events: none;
+  opacity: 0.3;
 }
 
 .canvas-lifebook-button:hover:not(:disabled) {
-  background: linear-gradient(135deg, #FFED4E 0%, #FFB347 100%);
-  transform: translateY(-2px);
-  box-shadow:
-    0 6px 20px rgba(255, 215, 0, 0.5),
-    0 0 30px rgba(255, 215, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+  background: #C9876F;
+  transform: translate(-2px, -2px);
+  box-shadow: 6px 6px 0 rgba(51, 51, 51, 0.3);
 }
 
 .canvas-lifebook-button:active:not(:disabled) {
-  transform: translateY(0);
+  transform: translate(2px, 2px);
+  box-shadow: 2px 2px 0 rgba(51, 51, 51, 0.3);
 }
 
 .canvas-lifebook-button:disabled {
-  opacity: 0.6;
+  opacity: 0.5;
   cursor: not-allowed;
 }
 
@@ -136,81 +149,71 @@ canvas {
 .canvas-lifebook-button .lifebook-spinner {
   width: 18px;
   height: 18px;
-  border: 3px solid rgba(0, 0, 0, 0.2);
-  border-top-color: #000;
+  border: 3px solid rgba(51, 51, 51, 0.2);
+  border-top-color: #333;
   border-radius: 50%;
   animation: spin 0.8s linear infinite;
   position: relative;
   z-index: 1;
 }
 
-/* Generate Life Book Button */
+/* Generate Life Book Button - Comic Book Style */
 .generate-lifebook-button {
   width: 100%;
-  padding: 16px 20px;
-  background: linear-gradient(135deg, #FFD700 0%, #FFA500 100%);
-  border: none;
-  border-radius: 14px;
-  color: #000;
-  font-size: 17px;
+  padding: 18px 20px;
+  background: #B8775E;
+  border: 3px solid #333333;
+  border-radius: 6px;
+  color: #FFF;
+  font-size: 19px;
   font-weight: 700;
   cursor: pointer;
-  transition: all 0.3s ease;
+  transition: all 0.2s ease;
   box-shadow:
-    0 4px 15px rgba(255, 215, 0, 0.4),
-    0 0 20px rgba(255, 215, 0, 0.3),
-    inset 0 1px 0 rgba(255, 255, 255, 0.3);
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+    4px 4px 0 rgba(51, 51, 51, 0.3),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.2);
+  font-family: 'Patrick Hand', 'Architects Daughter', cursive;
   margin-bottom: 24px;
   display: flex;
   align-items: center;
   justify-content: center;
   gap: 10px;
   position: relative;
-  overflow: hidden;
+  text-transform: uppercase;
+  letter-spacing: 1px;
 }
 
+/* Comic book halftone dot pattern */
 .generate-lifebook-button::before {
   content: '';
   position: absolute;
-  top: -50%;
-  left: -50%;
-  width: 200%;
-  height: 200%;
-  background: linear-gradient(
-    45deg,
-    transparent,
-    rgba(255, 255, 255, 0.3),
-    transparent
-  );
-  transform: rotate(45deg);
-  animation: shimmer 3s infinite;
-}
-
-@keyframes shimmer {
-  0% {
-    transform: translateX(-100%) translateY(-100%) rotate(45deg);
-  }
-  100% {
-    transform: translateX(100%) translateY(100%) rotate(45deg);
-  }
+  top: 0;
+  left: 0;
+  width: 100%;
+  height: 100%;
+  background-image: radial-gradient(circle, rgba(0, 0, 0, 0.1) 1px, transparent 1px);
+  background-size: 8px 8px;
+  pointer-events: none;
+  opacity: 0.3;
 }
 
 .generate-lifebook-button:hover {
-  background: linear-gradient(135deg, #FFED4E 0%, #FFB347 100%);
-  transform: translateY(-2px);
+  background: #C9876F;
+  transform: translate(-2px, -2px);
   box-shadow:
-    0 6px 20px rgba(255, 215, 0, 0.5),
-    0 0 30px rgba(255, 215, 0, 0.4),
-    inset 0 1px 0 rgba(255, 255, 255, 0.4);
+    6px 6px 0 rgba(51, 51, 51, 0.3),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.2);
 }
 
 .generate-lifebook-button:active {
-  transform: translateY(0) scale(0.98);
+  transform: translate(2px, 2px);
+  box-shadow:
+    2px 2px 0 rgba(51, 51, 51, 0.3),
+    inset -2px -2px 0 rgba(0, 0, 0, 0.2);
 }
 
 .generate-lifebook-button:disabled {
-  opacity: 0.7;
+  opacity: 0.5;
   cursor: not-allowed;
   transform: none;
 }
@@ -223,70 +226,79 @@ canvas {
 .lifebook-spinner {
   width: 20px;
   height: 20px;
-  border: 3px solid rgba(0, 0, 0, 0.1);
-  border-top: 3px solid #000;
+  border: 3px solid rgba(51, 51, 51, 0.2);
+  border-top: 3px solid #333;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
 
 .controls {
   margin-bottom: 32px;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 14px;
+  background: #FFF;
+  border-radius: 6px;
   padding: 16px;
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  border: 2px solid #333333;
+  box-shadow: 3px 3px 0 rgba(51, 51, 51, 0.2);
 }
 
 .controls p {
   margin: 10px 0;
   font-size: 14px;
-  font-weight: 500;
-  color: #6e6e73;
+  font-weight: 400;
+  color: #7D6B5C;
   display: flex;
   justify-content: space-between;
+  font-family: 'Lora', 'Merriweather', serif;
 }
 
 .controls p strong {
-  color: #1d1d1f;
+  color: #333333;
   font-weight: 600;
+  font-family: 'Patrick Hand', cursive;
 }
 
 .controls button {
   margin-top: 16px;
-  padding: 11px 20px;
-  background: #007aff;
-  border: none;
-  border-radius: 10px;
+  padding: 12px 20px;
+  background: #8A9A87;
+  border: 3px solid #333333;
+  border-radius: 6px;
   color: #fff;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
   width: 100%;
-  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
+  box-shadow: 3px 3px 0 rgba(51, 51, 51, 0.3);
+  font-family: 'Patrick Hand', cursive;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .controls button:hover {
-  background: #0071e3;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.35);
+  background: #9AAA97;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 rgba(51, 51, 51, 0.3);
 }
 
 .controls button:active {
-  transform: scale(0.98);
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 rgba(51, 51, 51, 0.3);
 }
 
 .instructions {
   margin-top: 24px;
   padding-top: 24px;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  border-top: 2px dashed #7D6B5C;
 }
 
 .instructions h3 {
-  font-size: 17px;
-  font-weight: 600;
+  font-size: 19px;
+  font-weight: 700;
   margin-bottom: 14px;
-  color: #1d1d1f;
+  color: #333333;
+  font-family: 'Patrick Hand', cursive;
+  text-transform: uppercase;
 }
 
 .instructions ul {
@@ -297,54 +309,83 @@ canvas {
 .instructions li {
   margin: 10px 0;
   font-size: 14px;
-  color: #6e6e73;
+  color: #7D6B5C;
   padding-left: 24px;
   position: relative;
-  line-height: 1.4;
+  line-height: 1.5;
 }
 
 .instructions li:before {
-  content: '•';
+  content: '★';
   position: absolute;
-  left: 8px;
-  color: #007aff;
+  left: 4px;
+  color: #8A9A87;
   font-weight: bold;
+  font-size: 16px;
 }
 
 .selected-node {
   margin-top: 24px;
   padding-top: 24px;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  border-top: 2px dashed #7D6B5C;
   margin-bottom: 24px;
 }
 
 .selected-node h3 {
-  font-size: 17px;
-  font-weight: 600;
+  font-size: 19px;
+  font-weight: 700;
   margin-bottom: 16px;
-  color: #1d1d1f;
+  color: #333333;
+  font-family: 'Patrick Hand', cursive;
+  text-transform: uppercase;
 }
 
 .node-details {
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 14px;
+  background: #FFF;
+  border-radius: 6px;
   padding: 20px;
-  border: 1px solid rgba(0, 0, 0, 0.04);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 2px solid #333333;
+  box-shadow: 4px 4px 0 rgba(51, 51, 51, 0.2);
+  position: relative;
+}
+
+/* Comic panel corner marks */
+.node-details::before,
+.node-details::after {
+  content: '';
+  position: absolute;
+  width: 12px;
+  height: 12px;
+  border: 2px solid #333333;
+}
+
+.node-details::before {
+  top: -2px;
+  left: -2px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.node-details::after {
+  bottom: -2px;
+  right: -2px;
+  border-left: none;
+  border-top: none;
 }
 
 .node-details h4 {
-  font-size: 19px;
+  font-size: 22px;
   margin-bottom: 12px;
-  color: #1d1d1f;
-  font-weight: 600;
-  letter-spacing: -0.3px;
+  color: #333333;
+  font-weight: 700;
+  letter-spacing: 0.5px;
+  font-family: 'Patrick Hand', cursive;
 }
 
 .node-details .description {
   font-size: 15px;
-  line-height: 1.5;
-  color: #6e6e73;
+  line-height: 1.6;
+  color: #7D6B5C;
   margin-bottom: 16px;
 }
 
@@ -363,44 +404,51 @@ canvas {
 }
 
 .node-metadata .label {
-  color: #86868b;
-  font-weight: 500;
+  color: #7D6B5C;
+  font-weight: 600;
   min-width: 85px;
+  font-family: 'Patrick Hand', cursive;
 }
 
 .node-metadata .value {
-  color: #007aff;
+  color: #8A9A87;
   font-weight: 600;
+  font-family: 'Patrick Hand', cursive;
 }
 
 .tag-list {
   display: flex;
   flex-wrap: wrap;
-  gap: 6px;
+  gap: 8px;
 }
 
 .tag {
-  background: rgba(0, 122, 255, 0.1);
-  color: #007aff;
-  padding: 5px 11px;
-  border-radius: 8px;
+  background: #FFF;
+  color: #333333;
+  padding: 6px 12px;
+  border: 2px solid #333333;
+  border-radius: 4px;
   font-size: 12px;
-  font-weight: 500;
+  font-weight: 600;
+  font-family: 'Patrick Hand', cursive;
+  box-shadow: 2px 2px 0 rgba(51, 51, 51, 0.2);
 }
 
 .physics-controls {
   margin-top: 24px;
   padding-top: 24px;
-  border-top: 1px solid rgba(0, 0, 0, 0.08);
+  border-top: 2px dashed #7D6B5C;
   margin-bottom: 24px;
 }
 
 .physics-controls h3 {
-  font-size: 17px;
-  font-weight: 600;
+  font-size: 19px;
+  font-weight: 700;
   margin-bottom: 16px;
-  color: #1d1d1f;
+  color: #333333;
   user-select: none;
+  font-family: 'Patrick Hand', cursive;
+  text-transform: uppercase;
 }
 
 .physics-sliders {
@@ -416,78 +464,85 @@ canvas {
 }
 
 .slider-group label {
-  font-size: 13px;
-  color: #6e6e73;
-  font-weight: 500;
+  font-size: 14px;
+  color: #7D6B5C;
+  font-weight: 600;
+  font-family: 'Patrick Hand', cursive;
 }
 
 .slider-group input[type="range"] {
   width: 100%;
-  height: 4px;
-  border-radius: 2px;
-  background: rgba(0, 0, 0, 0.08);
+  height: 6px;
+  border-radius: 3px;
+  background: rgba(125, 107, 92, 0.2);
   outline: none;
   -webkit-appearance: none;
   appearance: none;
+  border: 1px solid #333333;
 }
 
 .slider-group input[type="range"]::-webkit-slider-thumb {
   -webkit-appearance: none;
   appearance: none;
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background: #007aff;
+  background: #8A9A87;
+  border: 2px solid #333333;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+  box-shadow: 2px 2px 0 rgba(51, 51, 51, 0.3);
 }
 
 .slider-group input[type="range"]::-webkit-slider-thumb:hover {
   transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
+  box-shadow: 3px 3px 0 rgba(51, 51, 51, 0.3);
 }
 
 .slider-group input[type="range"]::-moz-range-thumb {
-  width: 20px;
-  height: 20px;
+  width: 22px;
+  height: 22px;
   border-radius: 50%;
-  background: #007aff;
+  background: #8A9A87;
+  border: 2px solid #333333;
   cursor: pointer;
-  border: none;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.3);
+  box-shadow: 2px 2px 0 rgba(51, 51, 51, 0.3);
 }
 
 .slider-group input[type="range"]::-moz-range-thumb:hover {
   transform: scale(1.1);
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.4);
+  box-shadow: 3px 3px 0 rgba(51, 51, 51, 0.3);
 }
 
 /* Edit Button */
 .edit-button {
   margin-top: 16px;
-  padding: 11px 20px;
-  background: #007aff;
-  border: none;
-  border-radius: 10px;
+  padding: 12px 20px;
+  background: #8A9A87;
+  border: 3px solid #333333;
+  border-radius: 6px;
   color: #fff;
-  font-size: 15px;
-  font-weight: 600;
+  font-size: 16px;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
   width: 100%;
-  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
+  box-shadow: 3px 3px 0 rgba(51, 51, 51, 0.3);
+  font-family: 'Patrick Hand', cursive;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .edit-button:hover {
-  background: #0071e3;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.35);
+  background: #9AAA97;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 rgba(51, 51, 51, 0.3);
 }
 
 .edit-button:active {
-  transform: scale(0.98);
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 rgba(51, 51, 51, 0.3);
 }
 
 /* Modal Overlay */
@@ -497,9 +552,7 @@ canvas {
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.5);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(51, 51, 51, 0.85);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -516,36 +569,64 @@ canvas {
   }
 }
 
-/* Modal Content */
+/* Modal Content - Comic Panel Style */
 .modal-content {
-  background: #fff;
-  border-radius: 20px;
+  background: #F8F5F2;
+  border-radius: 6px;
   padding: 32px;
   width: 90%;
   max-width: 520px;
   max-height: 85vh;
   overflow-y: auto;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.3);
+  border: 4px solid #333333;
+  box-shadow: 8px 8px 0 rgba(51, 51, 51, 0.3);
   animation: slideUp 0.3s ease;
+  position: relative;
+}
+
+/* Comic panel corner marks for modal */
+.modal-content::before,
+.modal-content::after {
+  content: '';
+  position: absolute;
+  width: 16px;
+  height: 16px;
+  border: 3px solid #333333;
+}
+
+.modal-content::before {
+  top: -4px;
+  left: -4px;
+  border-right: none;
+  border-bottom: none;
+}
+
+.modal-content::after {
+  bottom: -4px;
+  right: -4px;
+  border-left: none;
+  border-top: none;
 }
 
 @keyframes slideUp {
   from {
-    transform: translateY(20px);
+    transform: translateY(20px) scale(0.95);
     opacity: 0;
   }
   to {
-    transform: translateY(0);
+    transform: translateY(0) scale(1);
     opacity: 1;
   }
 }
 
 .modal-content h2 {
-  font-size: 24px;
+  font-size: 28px;
   font-weight: 700;
-  color: #1d1d1f;
+  color: #333333;
   margin-bottom: 24px;
-  letter-spacing: -0.5px;
+  letter-spacing: 0.5px;
+  font-family: 'Patrick Hand', 'Architects Daughter', cursive;
+  text-transform: uppercase;
 }
 
 /* Modal Form */
@@ -568,35 +649,37 @@ canvas {
 }
 
 .form-group label {
-  font-size: 14px;
-  font-weight: 600;
-  color: #1d1d1f;
+  font-size: 15px;
+  font-weight: 700;
+  color: #333333;
+  font-family: 'Patrick Hand', cursive;
 }
 
 .form-group input,
 .form-group textarea {
   padding: 12px 16px;
-  border: 1px solid rgba(0, 0, 0, 0.12);
-  border-radius: 10px;
+  border: 2px solid #333333;
+  border-radius: 4px;
   font-size: 15px;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Text', sans-serif;
-  color: #1d1d1f;
-  background: #f5f5f7;
+  font-family: 'Lora', 'Merriweather', serif;
+  color: #333333;
+  background: #FFF;
   transition: all 0.2s ease;
+  box-shadow: inset 2px 2px 0 rgba(51, 51, 51, 0.1);
 }
 
 .form-group input:focus,
 .form-group textarea:focus {
   outline: none;
-  border-color: #007aff;
-  background: #fff;
-  box-shadow: 0 0 0 4px rgba(0, 122, 255, 0.1);
+  border-color: #8A9A87;
+  background: #FFF;
+  box-shadow: inset 2px 2px 0 rgba(138, 154, 135, 0.2), 0 0 0 3px rgba(138, 154, 135, 0.2);
 }
 
 .form-group textarea {
   resize: vertical;
   min-height: 80px;
-  line-height: 1.5;
+  line-height: 1.6;
 }
 
 .form-group input[type="number"] {
@@ -619,41 +702,49 @@ canvas {
 .modal-actions button {
   flex: 1;
   padding: 12px 20px;
-  border: none;
-  border-radius: 10px;
-  font-size: 15px;
-  font-weight: 600;
+  border: 3px solid #333333;
+  border-radius: 6px;
+  font-size: 16px;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
+  font-family: 'Patrick Hand', cursive;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .cancel-button {
-  background: #f5f5f7;
-  color: #1d1d1f;
+  background: #FFF;
+  color: #333333;
+  box-shadow: 3px 3px 0 rgba(51, 51, 51, 0.2);
 }
 
 .cancel-button:hover {
-  background: #e8e8ed;
+  background: #F0F0F0;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 rgba(51, 51, 51, 0.3);
 }
 
 .cancel-button:active {
-  transform: scale(0.98);
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 rgba(51, 51, 51, 0.2);
 }
 
 .save-button {
-  background: #007aff;
+  background: #8A9A87;
   color: #fff;
-  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
+  box-shadow: 3px 3px 0 rgba(51, 51, 51, 0.3);
 }
 
 .save-button:hover {
-  background: #0071e3;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.35);
+  background: #9AAA97;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 rgba(51, 51, 51, 0.3);
 }
 
 .save-button:active {
-  transform: scale(0.98);
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 rgba(51, 51, 51, 0.3);
 }
 
 /* Image Section */
@@ -661,30 +752,33 @@ canvas {
   margin-bottom: 24px;
 }
 
-/* Generate Image Button */
+/* Generate Image Button - Comic Style */
 .generate-image-button {
   width: 100%;
   padding: 14px 20px;
-  background: #007aff;
-  border: none;
-  border-radius: 12px;
+  background: #6E8898;
+  border: 3px solid #333333;
+  border-radius: 6px;
   color: #fff;
-  font-size: 16px;
-  font-weight: 600;
+  font-size: 17px;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
-  box-shadow: 0 2px 8px rgba(0, 122, 255, 0.25);
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  box-shadow: 3px 3px 0 rgba(51, 51, 51, 0.3);
+  font-family: 'Patrick Hand', cursive;
+  text-transform: uppercase;
+  letter-spacing: 0.5px;
 }
 
 .generate-image-button:hover {
-  background: #0071e3;
-  transform: translateY(-1px);
-  box-shadow: 0 4px 12px rgba(0, 122, 255, 0.35);
+  background: #7E98A8;
+  transform: translate(-1px, -1px);
+  box-shadow: 4px 4px 0 rgba(51, 51, 51, 0.3);
 }
 
 .generate-image-button:active {
-  transform: scale(0.98);
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 rgba(51, 51, 51, 0.3);
 }
 
 .image-loading {
@@ -693,23 +787,24 @@ canvas {
   align-items: center;
   justify-content: center;
   padding: 40px 20px;
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 14px;
-  border: 1px solid rgba(0, 0, 0, 0.04);
+  background: #FFF;
+  border-radius: 6px;
+  border: 2px dashed #333333;
 }
 
 .image-loading p {
   margin-top: 16px;
   font-size: 14px;
-  color: #6e6e73;
-  font-weight: 500;
+  color: #7D6B5C;
+  font-weight: 600;
+  font-family: 'Patrick Hand', cursive;
 }
 
 .loading-spinner {
   width: 40px;
   height: 40px;
-  border: 3px solid rgba(0, 122, 255, 0.1);
-  border-top: 3px solid #007aff;
+  border: 3px solid rgba(51, 51, 51, 0.2);
+  border-top: 3px solid #333333;
   border-radius: 50%;
   animation: spin 1s linear infinite;
 }
@@ -724,57 +819,65 @@ canvas {
 }
 
 .generated-image-container {
-  background: rgba(255, 255, 255, 0.6);
-  border-radius: 14px;
+  background: #FFF;
+  border-radius: 6px;
   padding: 12px;
-  border: 1px solid rgba(0, 0, 0, 0.04);
-  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.04);
+  border: 3px solid #333333;
+  box-shadow: 4px 4px 0 rgba(51, 51, 51, 0.2);
 }
 
 .generated-image {
   width: 100%;
   height: auto;
-  border-radius: 10px;
+  border-radius: 4px;
   display: block;
-  box-shadow: 0 2px 12px rgba(0, 0, 0, 0.08);
+  border: 2px solid #333333;
   margin-bottom: 12px;
+  cursor: pointer;
+  transition: all 0.2s ease;
+}
+
+.generated-image:hover {
+  transform: translate(-2px, -2px);
+  box-shadow: 3px 3px 0 rgba(51, 51, 51, 0.3);
 }
 
 /* Regenerate Image Button */
 .regenerate-image-button {
   width: 100%;
   padding: 10px 16px;
-  background: rgba(0, 122, 255, 0.1);
-  border: 1px solid rgba(0, 122, 255, 0.2);
-  border-radius: 10px;
-  color: #007aff;
+  background: #FFF;
+  border: 2px solid #333333;
+  border-radius: 4px;
+  color: #333333;
   font-size: 14px;
-  font-weight: 600;
+  font-weight: 700;
   cursor: pointer;
   transition: all 0.2s ease;
-  font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', sans-serif;
+  font-family: 'Patrick Hand', cursive;
+  text-transform: uppercase;
+  box-shadow: 2px 2px 0 rgba(51, 51, 51, 0.2);
 }
 
 .regenerate-image-button:hover {
-  background: rgba(0, 122, 255, 0.15);
-  border-color: rgba(0, 122, 255, 0.3);
-  transform: translateY(-1px);
+  background: #F0F0F0;
+  transform: translate(-1px, -1px);
+  box-shadow: 3px 3px 0 rgba(51, 51, 51, 0.3);
 }
 
 .regenerate-image-button:active {
-  transform: scale(0.98);
+  transform: translate(1px, 1px);
+  box-shadow: 1px 1px 0 rgba(51, 51, 51, 0.2);
 }
 
-/* Enlarged Image Modal */
+/* Enlarged Image Modal - Comic Style */
 .image-modal-overlay {
   position: fixed;
   top: 0;
   left: 0;
   right: 0;
   bottom: 0;
-  background: rgba(0, 0, 0, 0.9);
-  backdrop-filter: blur(10px);
-  -webkit-backdrop-filter: blur(10px);
+  background: rgba(51, 51, 51, 0.95);
   display: flex;
   align-items: center;
   justify-content: center;
@@ -789,6 +892,11 @@ canvas {
   max-height: 90vh;
   cursor: default;
   animation: zoomIn 0.3s ease;
+  padding: 12px;
+  background: #F8F5F2;
+  border: 4px solid #333333;
+  border-radius: 6px;
+  box-shadow: 8px 8px 0 rgba(0, 0, 0, 0.5);
 }
 
 @keyframes zoomIn {
@@ -803,23 +911,23 @@ canvas {
 }
 
 .enlarged-image {
-  max-width: 90vw;
-  max-height: 90vh;
+  max-width: 85vw;
+  max-height: 85vh;
   width: auto;
   height: auto;
-  border-radius: 12px;
-  box-shadow: 0 20px 60px rgba(0, 0, 0, 0.5);
+  border-radius: 4px;
+  border: 2px solid #333333;
   display: block;
 }
 
 .image-modal-close {
   position: absolute;
-  top: -50px;
+  top: -60px;
   right: 0;
-  background: rgba(255, 255, 255, 0.1);
-  border: 2px solid rgba(255, 255, 255, 0.3);
+  background: #B8775E;
+  border: 3px solid #333333;
   color: #fff;
-  font-size: 36px;
+  font-size: 32px;
   width: 50px;
   height: 50px;
   border-radius: 50%;
@@ -828,17 +936,20 @@ canvas {
   align-items: center;
   justify-content: center;
   transition: all 0.2s ease;
-  font-weight: 300;
+  font-weight: 700;
   line-height: 1;
   padding: 0;
+  box-shadow: 3px 3px 0 rgba(51, 51, 51, 0.5);
+  font-family: 'Patrick Hand', cursive;
 }
 
 .image-modal-close:hover {
-  background: rgba(255, 255, 255, 0.2);
-  border-color: rgba(255, 255, 255, 0.5);
-  transform: scale(1.1);
+  background: #C9876F;
+  transform: translate(-2px, -2px);
+  box-shadow: 5px 5px 0 rgba(51, 51, 51, 0.5);
 }
 
 .image-modal-close:active {
-  transform: scale(0.95);
+  transform: translate(1px, 1px);
+  box-shadow: 2px 2px 0 rgba(51, 51, 51, 0.5);
 }

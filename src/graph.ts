@@ -353,7 +353,13 @@ export function initializeGraph(): void {
     'Married to Olga Mitrofanova from Russia',
     'Living together with two cats in a stable home',
     'High-performance simulation engineer building ambitious tools and starting a new company',
-    4200 // $4200/month
+    4200, // $4200/month
+    'Blonde', // Hair color
+    'Short', // Hair style
+    'Blue', // Eye color
+    'None', // Facial hair
+    'None', // Glasses
+    'Average' // Build
   );
   addNode(root);
 

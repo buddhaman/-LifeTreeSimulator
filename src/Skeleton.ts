@@ -264,15 +264,19 @@ export class Skeleton {
       const footSpacing = 20; // Distance between feet
       const nodeTopY = this.currentNode.y - this.currentNode.currentHeight / 2;
 
+      // Position skeleton at 75% from left to right of the node (to avoid blocking + button)
+      const nodeLeftEdge = this.currentNode.x - this.currentNode.currentWidth / 2;
+      const skeletonCenterX = nodeLeftEdge + this.currentNode.currentWidth * 0.75;
+
       // Pin feet and set position
-      this.leftFoot.x = this.currentNode.x - footSpacing / 2;
+      this.leftFoot.x = skeletonCenterX - footSpacing / 2;
       this.leftFoot.y = nodeTopY;
       this.leftFoot.z = 0;
       this.leftFoot.oldX = this.leftFoot.x;
       this.leftFoot.oldY = this.leftFoot.y;
       this.leftFoot.oldZ = 0;
 
-      this.rightFoot.x = this.currentNode.x + footSpacing / 2;
+      this.rightFoot.x = skeletonCenterX + footSpacing / 2;
       this.rightFoot.y = nodeTopY;
       this.rightFoot.z = 0;
       this.rightFoot.oldX = this.rightFoot.x;

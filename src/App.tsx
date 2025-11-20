@@ -652,25 +652,88 @@ function App() {
 
     console.log('📖 [LIFEBOOK] Creating', pages.length, 'pages');
 
+    // Calculate life stats
+    const startAge = path.length > 0 ? path[0].ageYears : 0;
+    const endAge = path.length > 0 ? path[path.length - 1].ageYears : 0;
+    const totalYears = endAge - startAge;
+
+    // Create cover page
+    const coverPage = `
+      <div class="life-book-page cover-page">
+        <div class="cover-content">
+          <div class="cover-decoration top"></div>
+          <h1 class="cover-title">My Life Story</h1>
+          <div class="cover-subtitle">A Journey Through Time</div>
+          <div class="cover-stats">
+            <div class="cover-stat">
+              <div class="stat-label">Years Covered</div>
+              <div class="stat-value">${totalYears}</div>
+            </div>
+            <div class="cover-stat">
+              <div class="stat-label">Life Moments</div>
+              <div class="stat-value">${path.length}</div>
+            </div>
+            <div class="cover-stat">
+              <div class="stat-label">Age Range</div>
+              <div class="stat-value">${startAge} - ${endAge}</div>
+            </div>
+          </div>
+          <div class="cover-decoration bottom"></div>
+          <div class="cover-date">Created ${new Date().toLocaleDateString('en-US', { month: 'long', day: 'numeric', year: 'numeric' })}</div>
+        </div>
+      </div>
+    `;
+
     const pagesHTML = pages.map((pageNodes, pageIndex) => {
-      const itemsHTML = pageNodes.map(node => `
-        <div class="life-book-item">
+      const startAge = pageNodes[0]?.ageYears;
+      const endAge = pageNodes[pageNodes.length - 1]?.ageYears;
+      const isNewDecade = startAge % 10 === 0 && pageIndex > 0;
+
+      // Check if we need a chapter divider (new decade)
+      const chapterDivider = isNewDecade ? `
+        <div class="life-book-page chapter-page">
+          <div class="chapter-content">
+            <div class="chapter-decoration"></div>
+            <h2 class="chapter-title">Chapter ${Math.floor(startAge / 10)}</h2>
+            <div class="chapter-subtitle">Ages ${startAge} - ${startAge + 9}</div>
+            <div class="chapter-decoration"></div>
+          </div>
+        </div>
+      ` : '';
+
+      // Varied layout patterns (2-column, 3-item, asymmetric)
+      const layoutType = pageIndex % 3;
+      const itemsHTML = pageNodes.map((node, nodeIndex) => `
+        <div class="life-book-item ${layoutType === 1 && nodeIndex === 0 ? 'featured' : ''}">
           <div class="life-book-image-container">
             ${node.generatedImageUrl
               ? `<img src="${node.generatedImageUrl}" alt="${node.title}" class="life-book-image" />`
               : `<div class="life-book-placeholder">No image</div>`
             }
           </div>
-          <p class="life-book-description">${node.change}</p>
+          <div class="caption-box">
+            <div class="caption-title">${node.title}</div>
+            <p class="caption-text">${node.change}</p>
+            <div class="caption-age">Age: ${node.ageYears}y ${node.ageWeeks}w</div>
+          </div>
         </div>
       `).join('');
 
       return `
-        <div class="life-book-page">
-          <div class="life-book-grid">
+        ${chapterDivider}
+        <div class="life-book-page content-page">
+          <div class="page-header">
+            <div class="page-header-decoration"></div>
+            <div class="page-age-range">Ages ${startAge} - ${endAge}</div>
+          </div>
+          <div class="life-book-grid layout-${layoutType}">
             ${itemsHTML}
           </div>
-          <div class="page-number">Page ${pageIndex + 1} of ${pages.length}</div>
+          <div class="page-number-container">
+            <div class="page-decoration-left"></div>
+            <div class="page-number">Page ${pageIndex + 1} of ${pages.length}</div>
+            <div class="page-decoration-right"></div>
+          </div>
         </div>
       `;
     }).join('');
@@ -681,7 +744,11 @@ function App() {
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Life Book</title>
+        <title>Life Book - Your Story</title>
+        <!-- Comic Book Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Lora:wght@400;600&display=swap" rel="stylesheet">
         <style>
           * {
             margin: 0;
@@ -690,30 +757,261 @@ function App() {
           }
 
           body {
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', sans-serif;
-            background: #f5f5f7;
+            font-family: 'Lora', serif;
+            background: #F8F5F2;
             padding: 20px;
+            position: relative;
+          }
+
+          /* Paper texture overlay */
+          body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.08;
+            background-image:
+              repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(125, 107, 92, 0.03) 2px,
+                rgba(125, 107, 92, 0.03) 4px
+              ),
+              repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 2px,
+                rgba(125, 107, 92, 0.03) 2px,
+                rgba(125, 107, 92, 0.03) 4px
+              );
+            background-size: 50px 50px;
           }
 
           .life-book-page {
             width: 210mm;
             min-height: 297mm;
-            background: white;
+            background: #FFFEF8;
             margin: 0 auto 20px;
             padding: 20mm;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border: 4px solid #333333;
+            box-shadow: 8px 8px 0 rgba(51, 51, 51, 0.2);
             position: relative;
             page-break-after: always;
+            z-index: 1;
+          }
+
+          /* Comic panel corner marks for page */
+          .life-book-page::before,
+          .life-book-page::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border: 3px solid #333333;
+          }
+
+          .life-book-page::before {
+            top: -4px;
+            left: -4px;
+            border-right: none;
+            border-bottom: none;
+          }
+
+          .life-book-page::after {
+            bottom: -4px;
+            right: -4px;
+            border-left: none;
+            border-top: none;
           }
 
           .life-book-page:last-child {
             margin-bottom: 0;
           }
 
+          /* COVER PAGE STYLES */
+          .cover-page {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #FFFEF8 0%, #F8F5F2 100%);
+          }
+
+          .cover-content {
+            text-align: center;
+            max-width: 80%;
+          }
+
+          .cover-decoration {
+            height: 80px;
+            background-image:
+              repeating-linear-gradient(90deg, #333 0px, #333 40px, transparent 40px, transparent 60px),
+              repeating-linear-gradient(0deg, #333 0px, #333 2px, transparent 2px, transparent 10px);
+            margin: 40px auto;
+            width: 200px;
+            border: 2px solid #333;
+            box-shadow: 3px 3px 0 rgba(51, 51, 51, 0.2);
+          }
+
+          .cover-title {
+            font-family: 'Patrick Hand', cursive;
+            font-size: 72px;
+            font-weight: 700;
+            color: #333333;
+            margin: 30px 0;
+            text-transform: uppercase;
+            letter-spacing: 2px;
+            text-shadow: 4px 4px 0 rgba(184, 119, 94, 0.3);
+          }
+
+          .cover-subtitle {
+            font-family: 'Lora', serif;
+            font-size: 24px;
+            color: #7D6B5C;
+            font-style: italic;
+            margin-bottom: 50px;
+          }
+
+          .cover-stats {
+            display: flex;
+            justify-content: space-around;
+            margin: 60px 0;
+            gap: 30px;
+          }
+
+          .cover-stat {
+            flex: 1;
+            padding: 20px;
+            background: white;
+            border: 3px solid #333333;
+            border-radius: 6px;
+            box-shadow: 4px 4px 0 rgba(51, 51, 51, 0.2);
+          }
+
+          .stat-label {
+            font-family: 'Patrick Hand', cursive;
+            font-size: 14px;
+            color: #7D6B5C;
+            text-transform: uppercase;
+            margin-bottom: 10px;
+          }
+
+          .stat-value {
+            font-family: 'Patrick Hand', cursive;
+            font-size: 48px;
+            font-weight: 700;
+            color: #B8775E;
+          }
+
+          .cover-date {
+            font-family: 'Lora', serif;
+            font-size: 14px;
+            color: #7D6B5C;
+            font-style: italic;
+            margin-top: 40px;
+          }
+
+          /* CHAPTER PAGE STYLES */
+          .chapter-page {
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            background: linear-gradient(135deg, #F8F5F2 0%, #FFFEF8 100%);
+          }
+
+          .chapter-content {
+            text-align: center;
+          }
+
+          .chapter-decoration {
+            height: 4px;
+            background: #333333;
+            width: 300px;
+            margin: 30px auto;
+            position: relative;
+          }
+
+          .chapter-decoration::before,
+          .chapter-decoration::after {
+            content: '';
+            position: absolute;
+            width: 20px;
+            height: 20px;
+            background: #B8775E;
+            border: 3px solid #333333;
+            border-radius: 50%;
+            top: -8px;
+          }
+
+          .chapter-decoration::before {
+            left: -10px;
+          }
+
+          .chapter-decoration::after {
+            right: -10px;
+          }
+
+          .chapter-title {
+            font-family: 'Patrick Hand', cursive;
+            font-size: 64px;
+            font-weight: 700;
+            color: #333333;
+            text-transform: uppercase;
+            margin: 20px 0;
+          }
+
+          .chapter-subtitle {
+            font-family: 'Lora', serif;
+            font-size: 28px;
+            color: #7D6B5C;
+            font-style: italic;
+          }
+
+          /* PAGE HEADER STYLES */
+          .page-header {
+            margin-bottom: 15mm;
+            text-align: center;
+            position: relative;
+          }
+
+          .page-header-decoration {
+            height: 2px;
+            background: repeating-linear-gradient(90deg, #333 0px, #333 10px, transparent 10px, transparent 20px);
+            margin-bottom: 10px;
+          }
+
+          .page-age-range {
+            font-family: 'Patrick Hand', cursive;
+            font-size: 18px;
+            color: #7D6B5C;
+            font-weight: 600;
+          }
+
+          /* GRID LAYOUT VARIATIONS */
           .life-book-grid {
             display: grid;
+            gap: 12mm;
+          }
+
+          .layout-0 {
             grid-template-columns: 1fr 1fr;
-            gap: 15mm;
+          }
+
+          .layout-1 {
+            grid-template-columns: 2fr 1fr;
+            grid-template-rows: auto auto;
+          }
+
+          .layout-1 .featured {
+            grid-row: 1 / 3;
+          }
+
+          .layout-2 {
+            grid-template-columns: 1fr 1fr 1fr;
           }
 
           .life-book-item {
@@ -723,11 +1021,12 @@ function App() {
           .life-book-image-container {
             width: 100%;
             aspect-ratio: 16/9;
-            background: #f5f5f7;
-            border-radius: 8px;
+            background: #F8F5F2;
+            border-radius: 4px;
+            border: 3px solid #333333;
             overflow: hidden;
-            margin-bottom: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 12px;
+            box-shadow: 4px 4px 0 rgba(51, 51, 51, 0.15);
           }
 
           .life-book-image {
@@ -742,29 +1041,127 @@ function App() {
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #86868b;
+            color: #7D6B5C;
             font-size: 14px;
+            font-family: 'Patrick Hand', cursive;
+            font-weight: 600;
           }
 
-          .life-book-description {
+          /* CAPTION BOX STYLES */
+          .caption-box {
+            background: white;
+            border: 2px solid #333333;
+            border-radius: 4px;
+            padding: 12px;
+            box-shadow: 2px 2px 0 rgba(51, 51, 51, 0.15);
+            position: relative;
+          }
+
+          .caption-box::before {
+            content: '';
+            position: absolute;
+            top: -10px;
+            left: 20px;
+            width: 0;
+            height: 0;
+            border-left: 10px solid transparent;
+            border-right: 10px solid transparent;
+            border-bottom: 10px solid #333333;
+          }
+
+          .caption-box::after {
+            content: '';
+            position: absolute;
+            top: -7px;
+            left: 21px;
+            width: 0;
+            height: 0;
+            border-left: 9px solid transparent;
+            border-right: 9px solid transparent;
+            border-bottom: 9px solid white;
+          }
+
+          .caption-title {
+            font-family: 'Patrick Hand', cursive;
+            font-size: 16px;
+            font-weight: 700;
+            color: #333333;
+            margin-bottom: 8px;
+            text-transform: uppercase;
+          }
+
+          .caption-text {
+            font-size: 12px;
+            line-height: 1.6;
+            color: #333333;
+            font-family: 'Lora', serif;
+            margin-bottom: 8px;
+          }
+
+          .caption-age {
+            font-family: 'Patrick Hand', cursive;
             font-size: 11px;
-            line-height: 1.5;
-            color: #1d1d1f;
-            font-style: italic;
+            color: #7D6B5C;
+            font-weight: 600;
+            text-align: right;
+          }
+
+          /* PAGE NUMBER WITH DECORATIONS */
+          .page-number-container {
+            position: absolute;
+            bottom: 10mm;
+            left: 50%;
+            transform: translateX(-50%);
+            display: flex;
+            align-items: center;
+            gap: 10px;
+          }
+
+          .page-decoration-left,
+          .page-decoration-right {
+            width: 40px;
+            height: 2px;
+            background: #333333;
+            position: relative;
+          }
+
+          .page-decoration-left::after,
+          .page-decoration-right::after {
+            content: '★';
+            position: absolute;
+            font-size: 12px;
+            color: #B8775E;
+            top: -7px;
+          }
+
+          .page-decoration-left::after {
+            right: -5px;
+          }
+
+          .page-decoration-right::after {
+            left: -5px;
           }
 
           .page-number {
-            position: absolute;
-            bottom: 10mm;
-            right: 10mm;
-            font-size: 10px;
-            color: #86868b;
+            font-size: 14px;
+            color: #7D6B5C;
+            font-family: 'Patrick Hand', cursive;
+            font-weight: 600;
+            padding: 4px 12px;
+            border: 2px solid #333333;
+            border-radius: 4px;
+            background: white;
+            box-shadow: 2px 2px 0 rgba(51, 51, 51, 0.2);
           }
 
           @media print {
             body {
               background: white;
               padding: 0;
+            }
+
+            body::before {
+              display: none;
             }
 
             .life-book-page {
@@ -777,6 +1174,7 @@ function App() {
         </style>
       </head>
       <body>
+        ${coverPage}
         ${pagesHTML}
       </body>
       </html>
