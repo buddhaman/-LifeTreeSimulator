@@ -10,6 +10,13 @@ export interface Node {
   livingSituation: string; // Living situation (e.g., renting, own house)
   careerSituation: string; // Career situation (e.g., student, working)
   monthlyIncome: number; // Net monthly income
+  // Physical appearance for image generation
+  hairColor: string; // Hair color (e.g., brown, blonde, black)
+  hairStyle: string; // Hair style (e.g., short, long, curly)
+  eyeColor: string; // Eye color (e.g., brown, blue, green)
+  facialHair: string; // Facial hair (e.g., none, beard, mustache)
+  glasses: string; // Glasses (e.g., none, prescription, sunglasses)
+  build: string; // Build/body type (e.g., slim, average, athletic)
   parentId: number | null;
   x: number;
   y: number;
@@ -23,6 +30,7 @@ export interface Node {
   isGrowing: boolean;
   isLoading: boolean; // True when waiting for API data
   growthProgress: number; // 0 to 1
+  generatedImageUrl: string | null; // Stored generated image data URL
 }
 
 export interface Edge {
@@ -62,6 +70,12 @@ export function createNode(
   livingSituation: string,
   careerSituation: string,
   monthlyIncome: number,
+  hairColor: string,
+  hairStyle: string,
+  eyeColor: string,
+  facialHair: string,
+  glasses: string,
+  build: string,
   parentId: number | null = null
 ): Node {
   // Initialize near parent if it exists
@@ -90,6 +104,12 @@ export function createNode(
     livingSituation,
     careerSituation,
     monthlyIncome,
+    hairColor,
+    hairStyle,
+    eyeColor,
+    facialHair,
+    glasses,
+    build,
     parentId,
     x: initialX,
     y: initialY,
@@ -103,6 +123,7 @@ export function createNode(
     isGrowing: isNew,
     isLoading: false,
     growthProgress: isNew ? 0 : 1,
+    generatedImageUrl: null,
   };
 }
 

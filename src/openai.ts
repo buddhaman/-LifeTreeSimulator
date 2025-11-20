@@ -276,7 +276,16 @@ function validateGeneratedNode(data: unknown): data is GeneratedNodeData {
  * Generate mock scenarios (fallback)
  */
 function generateMockScenarios(parentNode: Node, count: number): GeneratedNodeData[] {
-  const mockTemplates = [
+  const mockTemplates: Array<{
+    title: string;
+    change: string;
+    ageDelta: number;
+    incomeDelta: number;
+    careerChange?: string;
+    relationshipChange?: string;
+    locationChange?: string;
+    livingChange?: string;
+  }> = [
     {
       title: 'Career Advancement',
       change: 'Got promoted to senior position at work',
