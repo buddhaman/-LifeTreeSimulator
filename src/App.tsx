@@ -573,7 +573,11 @@ function App() {
       <head>
         <meta charset="UTF-8">
         <meta name="viewport" content="width=device-width, initial-scale=1.0">
-        <title>Life Book</title>
+        <title>Life Book - Your Story</title>
+        <!-- Comic Book Fonts -->
+        <link rel="preconnect" href="https://fonts.googleapis.com">
+        <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+        <link href="https://fonts.googleapis.com/css2?family=Patrick+Hand&family=Lora:wght@400;600&display=swap" rel="stylesheet">
         <style>
           * {
             margin: 0;
@@ -582,20 +586,76 @@ function App() {
           }
 
           body {
-            font-family: -apple-system, BlinkMacSystemFont, 'SF Pro Display', 'SF Pro Text', sans-serif;
-            background: #f5f5f7;
+            font-family: 'Lora', serif;
+            background: #F8F5F2;
             padding: 20px;
+            position: relative;
+          }
+
+          /* Paper texture overlay */
+          body::before {
+            content: '';
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            pointer-events: none;
+            z-index: 0;
+            opacity: 0.08;
+            background-image:
+              repeating-linear-gradient(
+                0deg,
+                transparent,
+                transparent 2px,
+                rgba(125, 107, 92, 0.03) 2px,
+                rgba(125, 107, 92, 0.03) 4px
+              ),
+              repeating-linear-gradient(
+                90deg,
+                transparent,
+                transparent 2px,
+                rgba(125, 107, 92, 0.03) 2px,
+                rgba(125, 107, 92, 0.03) 4px
+              );
+            background-size: 50px 50px;
           }
 
           .life-book-page {
             width: 210mm;
             min-height: 297mm;
-            background: white;
+            background: #FFFEF8;
             margin: 0 auto 20px;
             padding: 20mm;
-            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            border: 4px solid #333333;
+            box-shadow: 8px 8px 0 rgba(51, 51, 51, 0.2);
             position: relative;
             page-break-after: always;
+            z-index: 1;
+          }
+
+          /* Comic panel corner marks for page */
+          .life-book-page::before,
+          .life-book-page::after {
+            content: '';
+            position: absolute;
+            width: 16px;
+            height: 16px;
+            border: 3px solid #333333;
+          }
+
+          .life-book-page::before {
+            top: -4px;
+            left: -4px;
+            border-right: none;
+            border-bottom: none;
+          }
+
+          .life-book-page::after {
+            bottom: -4px;
+            right: -4px;
+            border-left: none;
+            border-top: none;
           }
 
           .life-book-page:last-child {
@@ -610,16 +670,21 @@ function App() {
 
           .life-book-item {
             break-inside: avoid;
+            background: white;
+            border: 3px solid #333333;
+            border-radius: 6px;
+            padding: 10px;
+            box-shadow: 4px 4px 0 rgba(51, 51, 51, 0.15);
           }
 
           .life-book-image-container {
             width: 100%;
             aspect-ratio: 16/9;
-            background: #f5f5f7;
-            border-radius: 8px;
+            background: #F8F5F2;
+            border-radius: 4px;
+            border: 2px solid #333333;
             overflow: hidden;
-            margin-bottom: 8px;
-            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+            margin-bottom: 10px;
           }
 
           .life-book-image {
@@ -634,29 +699,37 @@ function App() {
             display: flex;
             align-items: center;
             justify-content: center;
-            color: #86868b;
+            color: #7D6B5C;
             font-size: 14px;
+            font-family: 'Patrick Hand', cursive;
+            font-weight: 600;
           }
 
           .life-book-description {
-            font-size: 11px;
-            line-height: 1.5;
-            color: #1d1d1f;
-            font-style: italic;
+            font-size: 12px;
+            line-height: 1.6;
+            color: #333333;
+            font-family: 'Lora', serif;
           }
 
           .page-number {
             position: absolute;
             bottom: 10mm;
             right: 10mm;
-            font-size: 10px;
-            color: #86868b;
+            font-size: 12px;
+            color: #7D6B5C;
+            font-family: 'Patrick Hand', cursive;
+            font-weight: 600;
           }
 
           @media print {
             body {
               background: white;
               padding: 0;
+            }
+
+            body::before {
+              display: none;
             }
 
             .life-book-page {

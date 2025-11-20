@@ -49,7 +49,7 @@ function wrapText(ctx: CanvasRenderingContext2D, text: string, maxWidth: number)
   return lines;
 }
 
-// Draw a single bubble (node) - Apple-style design
+// Draw a single bubble (node) - Comic book panel style
 export function drawBubble(
   ctx: CanvasRenderingContext2D,
   node: Node,
@@ -62,50 +62,71 @@ export function drawBubble(
 
   const x = node.x - currentWidth / 2;
   const y = node.y - currentHeight / 2;
-  const radius = 16;
+  const radius = 6; // Less rounded for comic book style
 
   ctx.save();
 
-  // Green glow for growing nodes
+  // Comic book shadow effect
   if (node.isGrowing) {
     const glowIntensity = 0.6 + Math.sin(Date.now() / 200) * 0.4; // Pulsing effect
-    ctx.shadowColor = `rgba(52, 211, 153, ${glowIntensity})`;
-    ctx.shadowBlur = 40;
+    ctx.shadowColor = `rgba(138, 154, 135, ${glowIntensity})`;
+    ctx.shadowBlur = 30;
     ctx.shadowOffsetX = 0;
     ctx.shadowOffsetY = 0;
   } else {
-    // Normal shadow
-    ctx.shadowColor = 'rgba(0, 0, 0, 0.12)';
-    ctx.shadowBlur = isHovered ? 30 : 20;
-    ctx.shadowOffsetX = 0;
-    ctx.shadowOffsetY = isHovered ? 8 : 4;
+    // Offset shadow for comic depth
+    const shadowOffset = isHovered ? 6 : 4;
+    ctx.shadowColor = 'rgba(51, 51, 51, 0.3)';
+    ctx.shadowBlur = 0;
+    ctx.shadowOffsetX = shadowOffset;
+    ctx.shadowOffsetY = shadowOffset;
   }
 
-  // White/gray card background
-  const bgGray = isHovered ? 252 : 255;
-  ctx.fillStyle = `rgb(${bgGray}, ${bgGray}, ${bgGray})`;
+  // White panel background (like a comic panel)
+  ctx.fillStyle = isHovered ? '#FFFFFF' : '#FFFEF8';
   drawRoundedRect(ctx, x, y, currentWidth, currentHeight, radius);
   ctx.fill();
 
   ctx.restore();
   ctx.save();
 
-  // Subtle border
+  // Hand-drawn style border
   if (isSelected) {
-    ctx.strokeStyle = 'rgba(0, 122, 255, 0.8)';
-    ctx.lineWidth = 2.5;
+    ctx.strokeStyle = '#8A9A87'; // Sage green for selected (the chosen path)
+    ctx.lineWidth = 3;
     drawRoundedRect(ctx, x, y, currentWidth, currentHeight, radius);
     ctx.stroke();
   } else if (node.isGrowing) {
     // Green border for growing nodes
-    ctx.strokeStyle = 'rgba(52, 211, 153, 0.6)';
-    ctx.lineWidth = 2;
+    ctx.strokeStyle = '#8A9A87';
+    ctx.lineWidth = 2.5;
     drawRoundedRect(ctx, x, y, currentWidth, currentHeight, radius);
     ctx.stroke();
   } else {
-    ctx.strokeStyle = 'rgba(0, 0, 0, 0.06)';
-    ctx.lineWidth = 1;
+    ctx.strokeStyle = '#333333'; // Charcoal for comic panel border
+    ctx.lineWidth = 2;
     drawRoundedRect(ctx, x, y, currentWidth, currentHeight, radius);
+    ctx.stroke();
+  }
+
+  // Comic panel corner marks
+  if (!node.isGrowing) {
+    ctx.strokeStyle = '#333333';
+    ctx.lineWidth = 2;
+    const cornerSize = 10;
+
+    // Top-left corner
+    ctx.beginPath();
+    ctx.moveTo(x + cornerSize, y);
+    ctx.lineTo(x, y);
+    ctx.lineTo(x, y + cornerSize);
+    ctx.stroke();
+
+    // Bottom-right corner
+    ctx.beginPath();
+    ctx.moveTo(x + currentWidth - cornerSize, y + currentHeight);
+    ctx.lineTo(x + currentWidth, y + currentHeight);
+    ctx.lineTo(x + currentWidth, y + currentHeight - cornerSize);
     ctx.stroke();
   }
 
@@ -117,78 +138,88 @@ export function drawBubble(
     ctx.textAlign = 'left';
     ctx.textBaseline = 'top';
 
-    // Title (allow 2 lines)
-    ctx.font = '600 17px -apple-system, BlinkMacSystemFont, "SF Pro Display", sans-serif';
-    ctx.fillStyle = '#1d1d1f';
+    // Title (allow 2 lines) - Comic book handwritten font
+    ctx.font = '700 18px "Patrick Hand", "Architects Daughter", cursive';
+    ctx.fillStyle = '#333333'; // Charcoal
     const titleLines = wrapText(ctx, node.title, currentWidth - 32);
     const displayedTitleLines = titleLines.slice(0, 2);
     displayedTitleLines.forEach((line, i) => {
-      ctx.fillText(line, x + 16, y + 16 + i * 22);
+      ctx.fillText(line, x + 16, y + 16 + i * 24);
     });
 
-    // Change description (adjust position based on title line count)
-    const titleHeight = displayedTitleLines.length * 22;
-    ctx.font = '400 13px -apple-system, BlinkMacSystemFont, "SF Pro Text", sans-serif';
-    ctx.fillStyle = '#6e6e73';
+    // Change description (adjust position based on title line count) - Serif for readability
+    const titleHeight = displayedTitleLines.length * 24;
+    ctx.font = '400 14px "Lora", "Merriweather", serif';
+    ctx.fillStyle = '#7D6B5C'; // Sepia for secondary text
     const changeLines = wrapText(ctx, node.change, currentWidth - 32);
     changeLines.slice(0, 2).forEach((line, i) => {
-      ctx.fillText(line, x + 16, y + 16 + titleHeight + 7 + i * 18);
+      ctx.fillText(line, x + 16, y + 16 + titleHeight + 8 + i * 19);
     });
 
-    // Age badge
+    // Age badge - Comic style
     const ageText = `${node.ageYears}y ${node.ageWeeks}w`;
-    ctx.font = '600 11px -apple-system, BlinkMacSystemFont, sans-serif';
+    ctx.font = '700 11px "Patrick Hand", cursive';
     const ageMetrics = ctx.measureText(ageText);
-    const pillWidth = ageMetrics.width + 14;
-    const pillHeight = 20;
+    const pillWidth = ageMetrics.width + 16;
+    const pillHeight = 22;
     const pillX = x + 16;
     const pillY = y + currentHeight - pillHeight - 10;
 
-    ctx.fillStyle = '#f5f5f7';
+    // Comic style badge with border
+    ctx.fillStyle = '#FFFFFF';
     ctx.beginPath();
-    ctx.roundRect(pillX, pillY, pillWidth, pillHeight, 10);
+    ctx.roundRect(pillX, pillY, pillWidth, pillHeight, 4);
     ctx.fill();
 
-    ctx.fillStyle = '#1d1d1f';
-    ctx.fillText(ageText, pillX + 7, pillY + 5);
+    ctx.strokeStyle = '#333333';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
 
-    // Income badge
+    ctx.fillStyle = '#333333';
+    ctx.fillText(ageText, pillX + 8, pillY + 6);
+
+    // Income badge - Comic style
     const incomeText = `$${node.monthlyIncome}`;
     const incomeMetrics = ctx.measureText(incomeText);
-    const incomePillWidth = incomeMetrics.width + 14;
-    const incomePillX = pillX + pillWidth + 6;
+    const incomePillWidth = incomeMetrics.width + 16;
+    const incomePillX = pillX + pillWidth + 8;
 
-    ctx.fillStyle = '#f5f5f7';
+    ctx.fillStyle = '#FFFFFF';
     ctx.beginPath();
-    ctx.roundRect(incomePillX, pillY, incomePillWidth, pillHeight, 10);
+    ctx.roundRect(incomePillX, pillY, incomePillWidth, pillHeight, 4);
     ctx.fill();
 
-    ctx.fillStyle = '#34d399';
-    ctx.fillText(incomeText, incomePillX + 7, pillY + 5);
+    ctx.strokeStyle = '#333333';
+    ctx.lineWidth = 1.5;
+    ctx.stroke();
+
+    ctx.fillStyle = '#8A9A87'; // Sage green for income
+    ctx.fillText(incomeText, incomePillX + 8, pillY + 6);
   }
 }
 
-// Draw expand button on leaf nodes - Apple-style
+// Draw expand button on leaf nodes - Comic book style
 export function drawExpandButton(
   ctx: CanvasRenderingContext2D,
   node: Node,
   isHovered: boolean = false
 ): void {
-  const buttonSize = 28;
+  const buttonSize = 30;
   const buttonY = node.y - node.currentHeight / 2 - buttonSize - 12; // Above the node
   const centerX = node.x;
   const centerY = buttonY + buttonSize / 2;
 
   ctx.save();
 
-  // Apple-style shadow
-  ctx.shadowColor = 'rgba(0, 0, 0, 0.15)';
-  ctx.shadowBlur = isHovered ? 12 : 8;
-  ctx.shadowOffsetX = 0;
-  ctx.shadowOffsetY = 2;
+  // Comic book shadow effect
+  const shadowOffset = isHovered ? 4 : 3;
+  ctx.shadowColor = 'rgba(51, 51, 51, 0.4)';
+  ctx.shadowBlur = 0;
+  ctx.shadowOffsetX = shadowOffset;
+  ctx.shadowOffsetY = shadowOffset;
 
-  // Circle background - Apple blue with subtle hover state
-  ctx.fillStyle = isHovered ? '#0071e3' : '#007aff'; // Apple's blue shades
+  // Circle background - Sage green with hover state
+  ctx.fillStyle = isHovered ? '#9AAA97' : '#8A9A87';
   ctx.beginPath();
   ctx.arc(centerX, centerY, buttonSize / 2, 0, Math.PI * 2);
   ctx.fill();
@@ -196,9 +227,16 @@ export function drawExpandButton(
   ctx.restore();
   ctx.save();
 
-  // Plus sign - crisp and clean
+  // Comic book border
+  ctx.strokeStyle = '#333333';
+  ctx.lineWidth = 2;
+  ctx.beginPath();
+  ctx.arc(centerX, centerY, buttonSize / 2, 0, Math.PI * 2);
+  ctx.stroke();
+
+  // Plus sign - bold comic style
   ctx.strokeStyle = '#ffffff';
-  ctx.lineWidth = 2.5;
+  ctx.lineWidth = 3;
   ctx.lineCap = 'round';
 
   const plusSize = 10;
@@ -220,7 +258,7 @@ export function drawExpandButton(
 
 // Get expand button bounds for hit testing
 export function getExpandButtonBounds(node: Node) {
-  const buttonSize = 28;
+  const buttonSize = 30;
   return {
     x: node.x - buttonSize / 2,
     y: node.y - node.currentHeight / 2 - buttonSize - 12,
@@ -232,7 +270,7 @@ export function getExpandButtonBounds(node: Node) {
   };
 }
 
-// Draw an edge (bezier curve) - from parent to child with tapered thickness
+// Draw an edge (bezier curve) - Comic book style connector
 export function drawEdge(ctx: CanvasRenderingContext2D, fromNode: Node, toNode: Node): void {
   const fromX = fromNode.x;
   const fromY = fromNode.y - fromNode.currentHeight / 2; // Top of parent
@@ -241,20 +279,20 @@ export function drawEdge(ctx: CanvasRenderingContext2D, fromNode: Node, toNode: 
 
   const controlOffset = Math.abs(toY - fromY) * 0.5;
 
-  const startWidth = 8; // Thick at parent
+  const startWidth = 6; // Slightly thinner at parent
   const endWidth = 2;   // Thin at child
   const segments = 20;
 
   ctx.save();
 
-  // Green glow for growing edges
+  // Sage green glow for growing edges
   if (toNode.isGrowing) {
     const glowIntensity = 0.6 + Math.sin(Date.now() / 200) * 0.4; // Pulsing effect
-    ctx.shadowColor = `rgba(52, 211, 153, ${glowIntensity})`;
-    ctx.shadowBlur = 20;
-    ctx.fillStyle = `rgba(52, 211, 153, ${0.6 + glowIntensity * 0.2})`;
+    ctx.shadowColor = `rgba(138, 154, 135, ${glowIntensity})`;
+    ctx.shadowBlur = 15;
+    ctx.fillStyle = `rgba(138, 154, 135, ${0.7 + glowIntensity * 0.2})`;
   } else {
-    ctx.fillStyle = 'rgba(180, 180, 195, 1)'; // Light gray, solid and always visible
+    ctx.fillStyle = 'rgba(125, 107, 92, 0.4)'; // Sepia/brown sketch color
   }
 
   // Draw tapered path by creating a polygon along the bezier curve
@@ -319,7 +357,7 @@ export function drawEdge(ctx: CanvasRenderingContext2D, fromNode: Node, toNode: 
   ctx.restore();
 }
 
-// Draw subtle grid with plus signs at intersections
+// Draw subtle grid with dots at intersections (comic book style)
 function drawGrid(ctx: CanvasRenderingContext2D, camera: Camera2D): void {
   const { width, height } = ctx.canvas;
 
@@ -328,7 +366,7 @@ function drawGrid(ctx: CanvasRenderingContext2D, camera: Camera2D): void {
   const bottomRight = camera.screenToWorld(width, height);
 
   const gridSize = 100; // Grid spacing in world units
-  const plusSize = 3; // Size of plus sign
+  const dotSize = 2; // Size of dot
 
   ctx.save();
 
@@ -338,24 +376,14 @@ function drawGrid(ctx: CanvasRenderingContext2D, camera: Camera2D): void {
   const endX = Math.ceil(bottomRight.x / gridSize) * gridSize;
   const endY = Math.ceil(bottomRight.y / gridSize) * gridSize;
 
-  ctx.strokeStyle = 'rgba(190, 190, 200, 1)'; // Light gray, always visible
-  ctx.lineWidth = 2;
-  ctx.lineCap = 'round';
+  ctx.fillStyle = 'rgba(125, 107, 92, 0.15)'; // Subtle sepia dots
 
-  // Draw plus signs at grid intersections
+  // Draw dots at grid intersections
   for (let x = startX; x <= endX; x += gridSize) {
     for (let y = startY; y <= endY; y += gridSize) {
-      // Horizontal line of plus
       ctx.beginPath();
-      ctx.moveTo(x - plusSize, y);
-      ctx.lineTo(x + plusSize, y);
-      ctx.stroke();
-
-      // Vertical line of plus
-      ctx.beginPath();
-      ctx.moveTo(x, y - plusSize);
-      ctx.lineTo(x, y + plusSize);
-      ctx.stroke();
+      ctx.arc(x, y, dotSize, 0, Math.PI * 2);
+      ctx.fill();
     }
   }
 
@@ -373,9 +401,9 @@ export function render(
 ): void {
   const { width, height } = ctx.canvas;
 
-  // Clear canvas with Apple-style light background
+  // Clear canvas with warm paper background (comic book style)
   ctx.setTransform(1, 0, 0, 1, 0, 0);
-  ctx.fillStyle = '#f5f5f7'; // Apple's light gray background
+  ctx.fillStyle = '#F8F5F2'; // Warm paper color
   ctx.fillRect(0, 0, width, height);
 
   // Apply camera transform
